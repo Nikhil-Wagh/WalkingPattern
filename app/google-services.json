@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "163645502652",
+    "firebase_url": "https://walkingpattern-71969.firebaseio.com",
+    "project_id": "walkingpattern-71969",
+    "storage_bucket": "walkingpattern-71969.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163645502652:android:05881e796604df87",
+        "android_client_info": {
+          "package_name": "com.example.nikhil.walkingpattern"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "163645502652-g1uq0mvmdoed365h09t3veoo0nakku9a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nikhil.walkingpattern",
+            "certificate_hash": "8fab9c8d56d6258890536c909dca32ce982c83df"
+          }
+        },
+        {
+          "client_id": "163645502652-oprmaf8m57btio0qvsidv0sr2f27tube.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdjJBpbkzf6YS2v8voyHQOI3nAaAGYOM4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "163645502652-oprmaf8m57btio0qvsidv0sr2f27tube.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

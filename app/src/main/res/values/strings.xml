@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Walking Pattern</string>
+    <string name="sign_in_to_continue">Please Sign In to continue.</string>
+
+    <string name="title_activity_main">Graphs</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+</resources>
