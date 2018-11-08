@@ -1,23 +1,26 @@
 package com.example.nikhil.walkingpattern;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import javax.annotation.Nullable;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
 public class MainActivity extends AppCompatActivity {
-    private FirebaseFirestore db;
     private final String TAG = "MainActivity";
 
     @Override
@@ -26,34 +29,35 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        final Intent collectDataIntent = new Intent(this, CollectDataService.class);
 
         Button sendDataButton = (findViewById(R.id.send_data_button));
         sendDataButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addTempData();
+                stopService(collectDataIntent);
+                Log.d(TAG, "Service stopped by User interupt");
             }
         });
-//        addTempData();
-    }
 
-    private void addTempData() {
-        double arr[] = new double[] {1.232, 9.2314, 0.2311};
-        SensorReadings sensorReadings = new SensorReadings(arr);
-        db.collection("AccelerometerReadings")
-                .add(sensorReadings)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+        CollectionReference accCollectionReference = db.collection("AccelerometerReadings");
+        accCollectionReference.addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                if (e != null) {
+                    Log.w(TAG, "Listen Failed", e);
+                }
+
+//                List<SensorReadings> sensorReadings = new ArrayList<>();
+                for (QueryDocumentSnapshot doc: queryDocumentSnapshots) {
+                    if (doc.get("userId") != null) {
+                        Log.i(TAG, doc.getData().toString());
                     }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                    }
-                });
+                }
+            }
+        });
+        startService(collectDataIntent);
     }
 }
