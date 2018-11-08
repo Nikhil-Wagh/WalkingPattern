@@ -22,6 +22,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.Arrays;
+
 public class CollectDataService extends Service implements SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mSensor;
@@ -55,25 +57,27 @@ public class CollectDataService extends Service implements SensorEventListener {
         }
         registerSensors();
 
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        Notification notification = new NotificationCompat.Builder(this)
-                .setContentText("We are now collecting your walking pattern data. Please start walking")
-                .setContentTitle("Walking Pattern")
-                .setContentIntent(pendingIntent)
-                .build();
+//        Intent notificationIntent = new Intent(this, MainActivity.class);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+//        Notification notification = new NotificationCompat.Builder(this)
+//                .setContentText("We are now collecting your walking pattern data. Please start walking")
+//                .setContentTitle("Walking Pattern")
+//                .setContentIntent(pendingIntent)
+//                .build();
 
-        startForeground(1337, notification);
+        //startForeground(1337, notification);
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void registerSensors() {
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        Log.i(TAG, "Sensors registered:" + mSensor.getName());
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            Log.i(TAG, "Sensor changed values are: " + Arrays.toString(event.values));
             toFirebaseFireStore(event.values);
         }
     }
