@@ -30,12 +30,12 @@
         android:title="External">
         <menu>
             <item
-                android:id="@+id/downloadDataButton"
+                android:id="@+id/button_download_data_ActivityDrawer"
                 android:title="Download data"
                 android:icon="@drawable/ic_get_app_black_24dp"
                 />
             <item
-                android:id="@+id/logoutButton"
+                android:id="@+id/button_logout_ActivityDrawer"
                 android:title="logout"
                 android:icon="@drawable/ic_exit_to_app_black_24dp"
                 />

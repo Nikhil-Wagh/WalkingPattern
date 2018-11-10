@@ -14,7 +14,7 @@
         android:layout_margin="8dp">
 
         <com.jjoe64.graphview.GraphView
-            android:id="@+id/dynamicGraph"
+            android:id="@+id/graph_view_MainActivity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             />

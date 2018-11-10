@@ -15,7 +15,7 @@
     <!---->
 
     <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/profileImageView"
+        android:id="@+id/circular_image_view_profile_pic_NavigationHeader"
         android:layout_width="@dimen/nav_image_size"
         android:layout_height="@dimen/nav_image_size"
         android:contentDescription="@string/nav_header_desc"
@@ -26,11 +26,11 @@
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
         android:text="@string/nav_header_title"
-        android:id="@+id/userNameTextView"
+        android:id="@+id/text_view_username_NavigationHeader"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
     <TextView
-        android:id="@+id/userEmailIdTextView"
+        android:id="@+id/text_view_emailid_NavigationHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/nav_header_subtitle"/>
