@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:showIn="navigation_view">
+
+    <group
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/checkboxX-axis"
+            android:title="Show x-axis"
+            android:icon="@drawable/ic_x_axis_black_24dp"
+            app:actionViewClass="android.widget.CheckBox"
+            android:checked="true"
+            />
+        <item
+            android:id="@+id/checkboxY-axis"
+            android:title="Show y-axis"
+            android:icon="@drawable/ic_y_axis"
+            app:actionViewClass="android.widget.CheckBox"
+            />
+        <item
+            android:id="@+id/checkboxZ-axis"
+            android:title="Show z-axis"
+            android:icon="@drawable/ic_z_axis_24dp"
+            app:actionViewClass="android.widget.CheckBox"
+            />
+    </group>
+
+    <item
+        android:title="External">
+        <menu>
+            <item
+                android:id="@+id/downloadDataButton"
+                android:title="Download data"
+                android:icon="@drawable/ic_get_app_black_24dp"
+                />
+            <item
+                android:id="@+id/logoutButton"
+                android:title="logout"
+                android:icon="@drawable/ic_exit_to_app_black_24dp"
+                />
+        </menu>
+    </item>
+</menu>

@@ -5,7 +5,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.example.nikhil.walkingpattern"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -35,4 +35,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore:17.1.2'
 
     implementation "com.androidplot:androidplot-core:1.5.6"
+    implementation 'com.jjoe64:graphview:4.2.2'
+    implementation 'com.github.bumptech.glide:glide:4.8.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    implementation 'de.hdodenhof:circleimageview:2.2.0'
 }

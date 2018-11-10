@@ -13,8 +13,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -41,6 +43,7 @@ public class LoginActivity extends AppCompatActivity {
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestProfile()
+                .requestScopes(new Scope(Scopes.PROFILE))
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
         mAuth = FirebaseAuth.getInstance();
@@ -78,8 +81,7 @@ public class LoginActivity extends AppCompatActivity {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
-                if (account == null)
-                    Toast.makeText(this, "Account is null",Toast.LENGTH_LONG).show();
+                assert account != null;
                 firebaseAuthWithGoogle(account);
             } catch (ApiException e) {
                 Log.w(TAG, e);
@@ -99,7 +101,6 @@ public class LoginActivity extends AppCompatActivity {
                             Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             updateUI(user);
-                            showSnackBar("Welcome: " + user.getDisplayName());
                         }
                         else {
                             showSnackBar("Login failed");

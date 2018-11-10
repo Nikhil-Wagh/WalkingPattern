@@ -1,21 +1,26 @@
 package com.example.nikhil.walkingpattern;
 
+import android.annotation.SuppressLint;
+
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class SensorReadings {
     public float x_axis, y_axis, z_axis;
-    public long createdAt;
-    public String userId;
+    public long createdAtMillis;
+    public String userId, createdAtISO;
 
     /*SensorReadings() {
 
     }
 */
+    @SuppressLint("SimpleDateFormat")
     SensorReadings(float[] readings, String userId) {
-        this.x_axis = readings[0];
-        this.y_axis = readings[1];
-        this.z_axis = readings[2];
-        this.createdAt = new Date().getTime();
+        x_axis = readings[0];
+        y_axis = readings[1];
+        z_axis = readings[2];
+        createdAtMillis = new Date().getTime();
+        createdAtISO = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss:SSS").format(new Date().getTime());
         this.userId = userId;
     }
 
