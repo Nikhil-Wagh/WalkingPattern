@@ -11,7 +11,6 @@
             android:title="Show x-axis"
             android:icon="@drawable/ic_x_axis_black_24dp"
             app:actionViewClass="android.widget.CheckBox"
-            android:checked="true"
             />
         <item
             android:id="@+id/checkboxY-axis"

@@ -18,7 +18,9 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -148,11 +150,16 @@ public class MainActivity extends AppCompatActivity
         ImageView userProfileImage = headerView.findViewById(R.id.profileImageView);
         TextView userNameTV = headerView.findViewById(R.id.userNameTextView);
         TextView userEmailIDTV = headerView.findViewById(R.id.userEmailIdTextView);
+
         assert currentUser != null;
         Glide.with(this).load(currentUser.getPhotoUrl()).into(userProfileImage);
         userNameTV.setText(currentUser.getDisplayName());
         userEmailIDTV.setText(currentUser.getEmail());
-//        userProfileImage.setImageURI(currentUser.getPhotoUrl());
+
+        MenuItem menuItem = navigationView.getMenu().findItem(R.id.checkboxX_axis);
+        CompoundButton customSwitch = (CompoundButton) menuItem.getActionView();
+        customSwitch.setChecked(true);
+
     }
 
     @Override
@@ -187,12 +194,24 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }*/
 
+    public void showSnackBar(String message) {
+        Snackbar.make(findViewById(R.id.coordinatorLayoutGraphs), message, Snackbar.LENGTH_LONG).show();
+    }
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
+        if (id == R.id.checkboxX_axis) {
+            item.getActionView().setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                }
+            });
+        }
         /*if (id == R.id.nav_camera) {
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
