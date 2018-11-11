@@ -1,7 +1,5 @@
 package com.example.nikhil.walkingpattern;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +9,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -29,7 +26,6 @@ public class CollectDataService extends Service implements SensorEventListener {
     private Sensor mSensor;
     private FirebaseFirestore db;
 
-    private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
 
     private final String TAG = "CollectDataService";
@@ -50,7 +46,7 @@ public class CollectDataService extends Service implements SensorEventListener {
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         db = FirebaseFirestore.getInstance();
         try {
-            mAuth = FirebaseAuth.getInstance();
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
             currentUser = mAuth.getCurrentUser();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
@@ -77,7 +73,7 @@ public class CollectDataService extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            Log.i(TAG, "Sensor changed values are: " + Arrays.toString(event.values));
+            Log.i(TAG, "Sensor changed, values are: " + Arrays.toString(event.values));
             toFirebaseFireStore(event.values);
         }
     }

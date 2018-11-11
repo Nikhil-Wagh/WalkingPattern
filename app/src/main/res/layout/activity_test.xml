@@ -22,5 +22,3 @@
         app:menu="@menu/activity_test_drawer" />
 
 </android.support.v4.widget.DrawerLayout>
-
-    <!--app:headerLayout="@layout/nav_header_test"-->

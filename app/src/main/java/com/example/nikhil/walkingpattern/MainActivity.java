@@ -1,4 +1,10 @@
 package com.example.nikhil.walkingpattern;
+/* TODO:
+ * 1. Send Nav Drawer to back and toolbar to front
+ * 2. Create it a pseudo tabbed activity
+ * 3. Create a logo which shows the orientation of selected axis
+ * */
+
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -16,10 +22,13 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -38,6 +47,8 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.security.acl.Group;
+
 import javax.annotation.Nullable;
 
 
@@ -54,48 +65,41 @@ public class MainActivity extends AppCompatActivity
     private final int Z_AXIS_INDEX = 2;
 
     private Query getAccInOrder;
+
+    private RadioButton[] radioButtons;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggle();
-                Snackbar.make(view, "Data send toggled", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        initUI(); // Initialize UI for this Acitivity
 
-        initNavHeader();
+        initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
+        initFireBase(); // Get database instance and initialize database query
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        addSnapShotListener();
+    }
 
-        collectDataIntent = new Intent(this, CollectDataService.class);
-        GraphView graphView = findViewById(R.id.dynamicGraph);
-        mSeries = new LineGraphSeries<>();
-        graphView.addSeries(mSeries);
-
-
+    private void initFireBase() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         db.setFirestoreSettings(settings);
-
         getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAt");
+    }
 
+    private void initGraphView() {
+        collectDataIntent = new Intent(this, CollectDataService.class);
+        GraphView graphView = findViewById(R.id.graph_view_MainActivity);
+        mSeries = new LineGraphSeries<>();
+        graphView.addSeries(mSeries);
+    }
+
+    private void addSnapShotListener() {
         getAccInOrder.addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
@@ -122,6 +126,30 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void initUI() {
+        /* Initialize Floating Action Bar,
+        Navigation Header (nav_header_test.xml)
+        and final Navigation Drawer */
+        initFAB();
+        initNavHeader();
+        initNavView();
+    }
+
+
+    private void initNavView() {
+        Toolbar toolbar = findViewById(R.id.toolbar_MainActivity);
+        setSupportActionBar(toolbar);
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = findViewById(R.id.nav_view_MainActivity);
+        navigationView.setNavigationItemSelectedListener(this);
+    }
+
     private void toggle() {
         if(isMyServiceRunning(CollectDataService.class)) {
             Log.d(TAG, "Service Stopped, user interrupt");
@@ -130,6 +158,18 @@ public class MainActivity extends AppCompatActivity
         else {
             startService(collectDataIntent);
         }
+    }
+
+    public void initFAB() {
+        FloatingActionButton fab = findViewById(R.id.fab_MainActivity);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggle();
+                Snackbar.make(view, "Data send toggled", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {
@@ -153,22 +193,24 @@ public class MainActivity extends AppCompatActivity
         }
 
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view_MainActivity);
         View headerView = navigationView.inflateHeaderView(R.layout.nav_header_test);
-        ImageView userProfileImage = headerView.findViewById(R.id.profileImageView);
-        TextView userNameTV = headerView.findViewById(R.id.userNameTextView);
-        TextView userEmailIDTV = headerView.findViewById(R.id.userEmailIdTextView);
+        ImageView userProfileImage = headerView.findViewById(R.id.circular_image_view_profile_pic_NavigationHeader);
+        TextView userNameTV = headerView.findViewById(R.id.text_view_username_NavigationHeader);
+        TextView userEmailIDTV = headerView.findViewById(R.id.text_view_emailid_NavigationHeader);
 
         assert currentUser != null;
         Glide.with(this).load(currentUser.getPhotoUrl()).into(userProfileImage);
         userNameTV.setText(currentUser.getDisplayName());
         userEmailIDTV.setText(currentUser.getEmail());
 
-        MenuItem menuItem = navigationView.getMenu().findItem(R.id.checkboxX_axis);
-        CompoundButton compundButton = (CompoundButton) menuItem.getActionView();
-        compundButton.setChecked(true);
+        initRadioButtons(navigationView);
+    }
 
-
+    private void setRadioButtonDefaultChecked(NavigationView navigationView) {
+        MenuItem menuItem = navigationView.getMenu().findItem(R.id.radio_buttonX_axis);
+        RadioButton radioButton = (RadioButton) menuItem.getActionView();
+        radioButton.setChecked(true);
     }
 
     @Override
@@ -204,56 +246,62 @@ public class MainActivity extends AppCompatActivity
     }*/
 
     public void showSnackBar(String message) {
-        Snackbar.make(findViewById(R.id.coordinatorLayoutGraphs), message, Snackbar.LENGTH_LONG).show();
+        Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
+//    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-        final CompoundButton compundButton = (CompoundButton) item.getActionView();
-
-        showSnackBar(String.valueOf(item.getGroupId()));
-        if (id == R.id.checkboxX_axis) {
-            if (compundButton.isChecked()) {
-                setCurrentAxis(X_AXIS_INDEX);
-            }
-        }
-        else if (id == R.id.checkboxY_axis) {
-            if (compundButton.isChecked()) {
-                setCurrentAxis(Y_AXIS_INDEX);
-            }
-        }
-        else if (id == R.id.checkboxZ_axis) {
-            if (compundButton.isChecked()) {
-                setCurrentAxis(Z_AXIS_INDEX);
+        if (item.getGroupId() == R.id.radio_buttons_accelerometer) {
+            // Behaviour of Radio Buttons
+            final RadioButton radioButton = (RadioButton) item.getActionView();
+            if (id == R.id.radio_buttonX_axis) {
+                resetGraph(onRadioButtonCheckedBehaviour(radioButton, X_AXIS_INDEX));
+            } else if (id == R.id.radio_buttonY_axis) {
+                resetGraph(onRadioButtonCheckedBehaviour(radioButton, Y_AXIS_INDEX));
+            } else if (id == R.id.radio_buttonZ_axis) {
+                resetGraph(onRadioButtonCheckedBehaviour(radioButton, Z_AXIS_INDEX));
             }
         }
 
-        if (shouldResetGraph()) {
-            resetGraph();
+        else if (id == R.id.button_download_data_ActivityDrawer) {
+            showSnackBar("Downloading Data now");
         }
-        /*if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }*/
-
+        else if (id == R.id.button_logout_ActivityDrawer) {
+            logout();
+        }
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    private void resetGraph() {
+    private void logout() {
+        //TODO: Logout User here
+    }
+
+    private boolean onRadioButtonCheckedBehaviour(CompoundButton compundButton, int index) {
+        if (compundButton.isChecked()) {
+            showSnackBar("Atleast one of the axis has to be set");
+            return true;
+        }
+        setCurrentAxis(index);
+        for (RadioButton radioButton: radioButtons) {
+            radioButton.setChecked(false);
+        }
+        radioButtons[index].setChecked(true);
+        return false;
+    }
+
+    private void resetGraph(boolean shouldResetGraph) {
+        if (shouldResetGraph) {
+//        TODO: Error in this part
+//        mSeries.resetData(getPointsFromFireBase());
+        }
+    }
+
+    private DataPoint[] getPointsFromFireBase() {
         final DataPoint[] points = new DataPoint[1000];
         getAccInOrder.limit(1000).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -271,12 +319,12 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 });
-        mSeries = new LineGraphSeries<>(points);
+        return points;
     }
 
     private boolean shouldResetGraph() {
         //TODO: Replace with proper logic
-        return true;
+        return false;
     }
 
     private void setCurrentAxis(int axis) {
@@ -292,5 +340,48 @@ public class MainActivity extends AppCompatActivity
 
     private String getCurrentAxis() {
         return currentAxis;
+    }
+
+    private void initRadioButtons(NavigationView navigationView) {
+        Menu menu = navigationView.getMenu();
+        radioButtons = new RadioButton[]{
+                (RadioButton) menu.findItem(R.id.radio_buttonX_axis).getActionView(),
+                (RadioButton) menu.findItem(R.id.radio_buttonY_axis).getActionView(),
+                (RadioButton) menu.findItem(R.id.radio_buttonZ_axis).getActionView()
+        };
+        setRadioButtonDefaultChecked(navigationView);
+/*
+        Menu testMenu = navigationView.getMenu();
+        testMenu.add(R.id.radio_buttons_accelerometer, testMenu.findItem(R.id.radio_buttonX_axis).getActionView().getId(), 1, "Test Title");
+        testMenu.add(R.id.radio_buttons_accelerometer, testMenu.findItem(R.id.radio_buttonY_axis).getActionView().getId(), 1, "Test Title");
+*/
+
+       /* Menu testMenu = navigationView.getMenu();
+        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
+        for (int i = 0; i < 3; i++) {
+            RadioButton radioButton = new RadioButton(navigationView.getContext());
+            radioButton.setText("Show X - Axis");
+            radioGroup.addView(radioButton);
+//            testMenu.add(radioGroup.getId(), radioButton.getId(), RadioGroup.VERTICAL, "Show X Axis");
+        }
+*/
+
+       /* navigationView.getMenu().removeGroup(R.id.radio_buttons_accelerometer);
+        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
+        for (int i = 0; i < 3; i++) {
+            RadioButton radioButton = new RadioButton(navigationView.getContext());
+            radioButton.setText("Show X - Axis");
+            radioGroup.addView(radioButton);
+        }
+        navigationView.addView(radioGroup);*/
+
+        /*int[] ids = {R.id.radio_buttonX_axis, R.id.radio_buttonY_axis, R.id.radio_buttonZ_axis};
+        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
+        radioGroup.setOrientation(RadioGroup.VERTICAL);
+        for (int id : ids) {
+            MenuItem menuItem = navigationView.getMenu().findItem(id);
+            RadioButton radioButton = (RadioButton) menuItem.getActionView();
+            radioGroup.addView(radioButton);
+        }*/
     }
 }

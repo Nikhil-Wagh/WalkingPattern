@@ -48,7 +48,7 @@ public class LoginActivity extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
         mAuth = FirebaseAuth.getInstance();
 
-        SignInButton signInButton = findViewById(R.id.google_sign_in_button);
+        SignInButton signInButton = findViewById(R.id.button_google_sign_in_LoginActivity);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -118,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void showSnackBar(String message) {
-        Snackbar.make(findViewById(R.id.coordinator_layout), message, Snackbar.LENGTH_LONG).show();
+        Snackbar.make(findViewById(R.id.coordinator_layout_LoginActivity), message, Snackbar.LENGTH_LONG).show();
     }
 
 }
