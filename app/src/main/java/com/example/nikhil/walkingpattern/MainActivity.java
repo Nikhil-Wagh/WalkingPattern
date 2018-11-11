@@ -28,10 +28,10 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -43,11 +43,10 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
-
-import java.security.acl.Group;
 
 import javax.annotation.Nullable;
 
@@ -56,17 +55,21 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private Intent collectDataIntent;
-    private final String TAG = "NavigationDrawer";
+    private final String TAG = "MainActivity";
     private LineGraphSeries<DataPoint> mSeries;
 
-    private String currentAxis = "";
+    private String currentAxis = "x_axis";
     private final int X_AXIS_INDEX = 0;
     private final int Y_AXIS_INDEX = 1;
     private final int Z_AXIS_INDEX = 2;
 
+    private FirebaseFirestore db;
     private Query getAccInOrder;
 
     private RadioButton[] radioButtons;
+
+    private long minX = 1000000000, prevX = -1, currX;
+    private GraphView graphView;
 
 
     @Override
@@ -80,23 +83,46 @@ public class MainActivity extends AppCompatActivity
 
         initFireBase(); // Get database instance and initialize database query
 
-        addSnapShotListener();
+
     }
 
     private void initFireBase() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         db.setFirestoreSettings(settings);
-        getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAt");
+        getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAtMillis");
+        Log.i(TAG, "Firebase initialized");
+
+        addSnapShotListener();
     }
 
     private void initGraphView() {
         collectDataIntent = new Intent(this, CollectDataService.class);
-        GraphView graphView = findViewById(R.id.graph_view_MainActivity);
+        graphView = findViewById(R.id.graph_view_MainActivity);
         mSeries = new LineGraphSeries<>();
         graphView.addSeries(mSeries);
+        graphView.getViewport().setXAxisBoundsManual(true);
+        graphView.getViewport().setMinX(0);
+        graphView.getViewport().setMaxX(10000);
+        graphView.getViewport().setScalable(true);
+
+        graphView.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
+            @Override
+            public String formatLabel(double value, boolean isValueX) {
+                if (isValueX) {
+                    // show normal x values
+                    // TODO: show date format of events
+                    return super.formatLabel(value, isValueX);
+                } else {
+                    // show currency for y values
+                    return super.formatLabel(value, isValueX);
+                }
+            }
+        });
+
+        graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
     }
 
     private void addSnapShotListener() {
@@ -107,19 +133,14 @@ public class MainActivity extends AppCompatActivity
                     Log.w(TAG, "Listen Failed", e);
                 }
                 assert queryDocumentSnapshots != null;
-                long minX = -1, prevX = -1, currX;
                 for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                     if (doc.get("userId") != null) {
-                        if (minX == -1)
-                            minX = (long) doc.get("createdAt");
-                        currX = (long) doc.get("createdAt") - minX;
+                        minX = Math.min(minX, (long) doc.get("createdAtMillis"));
+                        currX = (long) doc.get("createdAtMillis") - minX;
                         if (currX > prevX) {
-                            mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), false, 100);
+                            mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
                             prevX = currX;
-                        } else {
-                            Log.e(TAG, "next x-axis value is not greater n\n" + currX + " : " + prevX);
                         }
-                        Log.i(TAG, "Loaded from server: " + doc.getData().toString());
                     }
                 }
             }
@@ -154,6 +175,7 @@ public class MainActivity extends AppCompatActivity
         if(isMyServiceRunning(CollectDataService.class)) {
             Log.d(TAG, "Service Stopped, user interrupt");
             stopService(collectDataIntent);
+            showSnackBar("Service Stopped.");
         }
         else {
             startService(collectDataIntent);
@@ -166,8 +188,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 toggle();
-                Snackbar.make(view, "Data send toggled", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
     }
@@ -223,28 +243,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-  /*  @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.test, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }*/
-
     public void showSnackBar(String message) {
         Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
@@ -284,43 +282,44 @@ public class MainActivity extends AppCompatActivity
     private boolean onRadioButtonCheckedBehaviour(CompoundButton compundButton, int index) {
         if (compundButton.isChecked()) {
             showSnackBar("Atleast one of the axis has to be set");
-            return true;
+            return false;
         }
         setCurrentAxis(index);
         for (RadioButton radioButton: radioButtons) {
             radioButton.setChecked(false);
         }
         radioButtons[index].setChecked(true);
-        return false;
+        return true;
     }
 
     private void resetGraph(boolean shouldResetGraph) {
+        Log.i(TAG, "Reset graph: " + shouldResetGraph);
         if (shouldResetGraph) {
-//        TODO: Error in this part
-//        mSeries.resetData(getPointsFromFireBase());
-        }
-    }
-
-    private DataPoint[] getPointsFromFireBase() {
-        final DataPoint[] points = new DataPoint[1000];
-        getAccInOrder.limit(1000).get()
+            graphView.setTitle("Accelerometer: " + getCurrentAxis());
+            getAccInOrder.limit(1000).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        Log.d(TAG, "Size of data recieved:" + task.getResult().size());
                         if (task.getResult() != null && task.isSuccessful()) {
                             int index = 0;
+                            DataPoint[] points = new DataPoint[1000];
                             for (QueryDocumentSnapshot doc : task.getResult()) {
-                                points[index] = new DataPoint((float) doc.get("createdAtMillis"), (float) doc.get(getCurrentAxis()));
+//                                Log.i(TAG, "Document loaded from Firebase: " + doc.getData().toString());
+                                DataPoint dataPoint = new DataPoint((long) doc.get("createdAtMillis"), (double) doc.get(getCurrentAxis()));
+                                points[index] = dataPoint;
                                 index++;
                             }
+                            mSeries.resetData(points);
                         }
                         else {
                             Log.e(TAG, "Complete database GET FAILED", task.getException());
                         }
                     }
                 });
-        return points;
+        }
     }
+
 
     private boolean shouldResetGraph() {
         //TODO: Replace with proper logic
@@ -336,6 +335,7 @@ public class MainActivity extends AppCompatActivity
             currentAxis = "z_axis";
         else
             currentAxis = "x_axis";
+        Log.i(TAG, "Current Axis changed to: " + getCurrentAxis());
     }
 
     private String getCurrentAxis() {
@@ -384,4 +384,26 @@ public class MainActivity extends AppCompatActivity
             radioGroup.addView(radioButton);
         }*/
     }
+
+    /*  @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.test, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }*/
 }

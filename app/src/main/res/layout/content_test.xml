@@ -6,19 +6,15 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".MainActivity"
-    tools:showIn="@layout/app_bar_test">
+    tools:showIn="@layout/app_bar_test"
+    android:layout_margin="@dimen/GraphViewMargin">
 
-    <android.support.constraint.ConstraintLayout
+
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/graph_view_MainActivity"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="8dp">
+        android:layout_height="wrap_content"
+        />
 
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/graph_view_MainActivity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            />
-
-    </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>
