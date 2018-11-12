@@ -3,12 +3,16 @@ package com.example.nikhil.walkingpattern;
  * 1. Send Nav Drawer to back and toolbar to front
  * 2. Create it a pseudo tabbed activity
  * 3. Create a logo which shows the orientation of selected axis
+ * 4. Create a Date Picker
+ * 5. Eradicate all the static constant Strings
+ * 6. Query for last hour only if not specified
  * */
 
 
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.icu.util.MeasureUnit;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -66,7 +70,8 @@ public class MainActivity extends AppCompatActivity
     private FirebaseFirestore db;
     private Query getAccInOrder;
 
-    private RadioButton[] radioButtons;
+    private CompoundButton[] radioButtons;
+    private NavigationView navigationView;
 
     private long minX = 1000000000, prevX = -1, currX;
     private GraphView graphView;
@@ -82,7 +87,6 @@ public class MainActivity extends AppCompatActivity
         initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
 
         initFireBase(); // Get database instance and initialize database query
-
 
     }
 
@@ -126,7 +130,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void addSnapShotListener() {
-        getAccInOrder.addSnapshotListener(new EventListener<QuerySnapshot>() {
+        getAccInOrder.addSnapshotListener(MainActivity.this, new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
                 if (e != null) {
@@ -152,8 +156,8 @@ public class MainActivity extends AppCompatActivity
         Navigation Header (nav_header_test.xml)
         and final Navigation Drawer */
         initFAB();
-        initNavHeader();
         initNavView();
+        initNavHeader();
     }
 
 
@@ -167,7 +171,7 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = findViewById(R.id.nav_view_MainActivity);
+        navigationView = findViewById(R.id.nav_view_MainActivity);
         navigationView.setNavigationItemSelectedListener(this);
     }
 
@@ -212,8 +216,6 @@ public class MainActivity extends AppCompatActivity
             Log.e(TAG, e.getMessage());
         }
 
-
-        NavigationView navigationView = findViewById(R.id.nav_view_MainActivity);
         View headerView = navigationView.inflateHeaderView(R.layout.nav_header_test);
         ImageView userProfileImage = headerView.findViewById(R.id.circular_image_view_profile_pic_NavigationHeader);
         TextView userNameTV = headerView.findViewById(R.id.text_view_username_NavigationHeader);
@@ -247,6 +249,11 @@ public class MainActivity extends AppCompatActivity
         Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
 
+    public void onPostRadioButtonChanged(int radioButtonIndex, boolean shouldResetGraph) {
+        setCurrentAxis(radioButtonIndex);
+        resetGraph(shouldResetGraph);
+    }
+
 //    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -256,15 +263,15 @@ public class MainActivity extends AppCompatActivity
             // Behaviour of Radio Buttons
             final RadioButton radioButton = (RadioButton) item.getActionView();
             if (id == R.id.radio_buttonX_axis) {
-                resetGraph(onRadioButtonCheckedBehaviour(radioButton, X_AXIS_INDEX));
+                onMenuItemSelectedBehaviour(radioButton, X_AXIS_INDEX);
             } else if (id == R.id.radio_buttonY_axis) {
-                resetGraph(onRadioButtonCheckedBehaviour(radioButton, Y_AXIS_INDEX));
+                onMenuItemSelectedBehaviour(radioButton, Y_AXIS_INDEX);
             } else if (id == R.id.radio_buttonZ_axis) {
-                resetGraph(onRadioButtonCheckedBehaviour(radioButton, Z_AXIS_INDEX));
+                onMenuItemSelectedBehaviour(radioButton, Z_AXIS_INDEX);
             }
         }
 
-        else if (id == R.id.button_download_data_ActivityDrawer) {
+        if (id == R.id.button_download_data_ActivityDrawer) {
             showSnackBar("Downloading Data now");
         }
         else if (id == R.id.button_logout_ActivityDrawer) {
@@ -279,14 +286,13 @@ public class MainActivity extends AppCompatActivity
         //TODO: Logout User here
     }
 
-    private boolean onRadioButtonCheckedBehaviour(CompoundButton compundButton, int index) {
+    private boolean onMenuItemSelectedBehaviour(CompoundButton compundButton, int index) {
         if (compundButton.isChecked()) {
             showSnackBar("Atleast one of the axis has to be set");
             return false;
         }
-        setCurrentAxis(index);
-        for (RadioButton radioButton: radioButtons) {
-            radioButton.setChecked(false);
+        for (CompoundButton compoundButton: radioButtons) {
+            compoundButton.setChecked(false);
         }
         radioButtons[index].setChecked(true);
         return true;
@@ -305,7 +311,6 @@ public class MainActivity extends AppCompatActivity
                             int index = 0;
                             DataPoint[] points = new DataPoint[1000];
                             for (QueryDocumentSnapshot doc : task.getResult()) {
-//                                Log.i(TAG, "Document loaded from Firebase: " + doc.getData().toString());
                                 DataPoint dataPoint = new DataPoint((long) doc.get("createdAtMillis"), (double) doc.get(getCurrentAxis()));
                                 points[index] = dataPoint;
                                 index++;
@@ -318,12 +323,6 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
         }
-    }
-
-
-    private boolean shouldResetGraph() {
-        //TODO: Replace with proper logic
-        return false;
     }
 
     private void setCurrentAxis(int axis) {
@@ -344,66 +343,42 @@ public class MainActivity extends AppCompatActivity
 
     private void initRadioButtons(NavigationView navigationView) {
         Menu menu = navigationView.getMenu();
-        radioButtons = new RadioButton[]{
-                (RadioButton) menu.findItem(R.id.radio_buttonX_axis).getActionView(),
-                (RadioButton) menu.findItem(R.id.radio_buttonY_axis).getActionView(),
-                (RadioButton) menu.findItem(R.id.radio_buttonZ_axis).getActionView()
+        radioButtons = new CompoundButton[]{
+                (CompoundButton) menu.findItem(R.id.radio_buttonX_axis).getActionView(),
+                (CompoundButton) menu.findItem(R.id.radio_buttonY_axis).getActionView(),
+                (CompoundButton) menu.findItem(R.id.radio_buttonZ_axis).getActionView()
+        };
+        final MenuItem[] menuItems = new MenuItem[]{
+                menu.findItem(R.id.radio_buttonX_axis),
+                menu.findItem(R.id.radio_buttonY_axis),
+                menu.findItem(R.id.radio_buttonZ_axis)
         };
         setRadioButtonDefaultChecked(navigationView);
-/*
-        Menu testMenu = navigationView.getMenu();
-        testMenu.add(R.id.radio_buttons_accelerometer, testMenu.findItem(R.id.radio_buttonX_axis).getActionView().getId(), 1, "Test Title");
-        testMenu.add(R.id.radio_buttons_accelerometer, testMenu.findItem(R.id.radio_buttonY_axis).getActionView().getId(), 1, "Test Title");
-*/
-
-       /* Menu testMenu = navigationView.getMenu();
-        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
-        for (int i = 0; i < 3; i++) {
-            RadioButton radioButton = new RadioButton(navigationView.getContext());
-            radioButton.setText("Show X - Axis");
-            radioGroup.addView(radioButton);
-//            testMenu.add(radioGroup.getId(), radioButton.getId(), RadioGroup.VERTICAL, "Show X Axis");
+        for (final MenuItem item : menuItems) {
+            CompoundButton compoundButton = (CompoundButton) item.getActionView();
+            compoundButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        int index = 0;
+                        for (MenuItem item : menuItems) {
+                            CompoundButton radioButton = (CompoundButton) item.getActionView();
+                            if (radioButton.getId() == buttonView.getId()) {
+                                item.setChecked(true);
+                                radioButton.setChecked(true);
+                                onPostRadioButtonChanged(index, true);
+                            } else {
+                                item.setChecked(false);
+                                radioButton.setChecked(false);
+                            }
+                            index++;
+                            DrawerLayout drawer = findViewById(R.id.drawer_layout);
+                            drawer.closeDrawer(GravityCompat.START);
+                        }
+                        Log.i(TAG, "Current Axis: " + getCurrentAxis());
+                    }
+                }
+            });
         }
-*/
-
-       /* navigationView.getMenu().removeGroup(R.id.radio_buttons_accelerometer);
-        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
-        for (int i = 0; i < 3; i++) {
-            RadioButton radioButton = new RadioButton(navigationView.getContext());
-            radioButton.setText("Show X - Axis");
-            radioGroup.addView(radioButton);
-        }
-        navigationView.addView(radioGroup);*/
-
-        /*int[] ids = {R.id.radio_buttonX_axis, R.id.radio_buttonY_axis, R.id.radio_buttonZ_axis};
-        RadioGroup radioGroup = new RadioGroup(navigationView.getContext());
-        radioGroup.setOrientation(RadioGroup.VERTICAL);
-        for (int id : ids) {
-            MenuItem menuItem = navigationView.getMenu().findItem(id);
-            RadioButton radioButton = (RadioButton) menuItem.getActionView();
-            radioGroup.addView(radioButton);
-        }*/
     }
-
-    /*  @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.test, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }*/
 }
