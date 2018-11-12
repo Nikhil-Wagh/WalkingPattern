@@ -1,13 +1,13 @@
 package com.example.nikhil.walkingpattern;
+
 /* TODO:
  * 1. Send Nav Drawer to back and toolbar to front
  * 2. Create it a pseudo tabbed activity
  * 3. Create a logo which shows the orientation of selected axis
  * 4. Create a Date Picker
  * 5. Eradicate all the static constant Strings
- * 6. Query for last hour only if not specified
+ * 6. Query for last hour only if not specified : Done
  * */
-
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -34,6 +34,7 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -49,10 +50,10 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 
 import javax.annotation.Nullable;
@@ -77,9 +78,9 @@ public class MainActivity extends AppCompatActivity
     private NavigationView navigationView;
 
     private long prevX = -1, currX;
-    private long lowerLimitTime;
     private GraphView graphView;
 
+    private AVLoadingIndicatorView avi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,10 +101,10 @@ public class MainActivity extends AppCompatActivity
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         db.setFirestoreSettings(settings);
-        lowerLimitTime = new Date().getTime() - 3600 * 1000;
-//        long lowerLimitTime = new Date().getTime() - 3600 * 1000; // 1 hour back
+//        lowerLimitTime = new Date().getTime() - 600 * 1000;
+        long lowerLimitTime = new Date().getTime() - 300 * 1000; // last 5 min
         Log.i(TAG, "Lower limit of X values: " + lowerLimitTime);
-        getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAtMillis"); //.whereGreaterThan("createdAtMillis", lowerLimitTime);
+        getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAtMillis").whereGreaterThan("createdAtMillis", lowerLimitTime);
         Log.i(TAG, "Firebase initialized");
 
         addSnapShotListener();
@@ -116,11 +117,10 @@ public class MainActivity extends AppCompatActivity
         graphView.addSeries(mSeries);
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
-        graphView.getViewport().setMaxX(10000);
+        graphView.getViewport().setMaxX(1000);
         graphView.getViewport().setScalable(true);
         setTitle();
 
-        final Calendar calendar = Calendar.getInstance();
         String dateformat = "mm:ss.SSS";
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateformat);
 
@@ -128,27 +128,6 @@ public class MainActivity extends AppCompatActivity
         graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
     }
 
-    private void addSnapShotListener() {
-        getAccInOrder.addSnapshotListener(MainActivity.this, new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    Log.w(TAG, "Listen Failed", e);
-                }
-                assert queryDocumentSnapshots != null;
-                for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                    if (doc.get("userId") != null) {
-                        currX = (long) doc.get("createdAtMillis");
-                        if (currX > prevX) {
-                            mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
-                            prevX = currX;
-//                            Log.i(TAG, "Data appended to graph: " + doc.getData());
-                        }
-                    }
-                }
-            }
-        });
-    }
 
     private void initUI() {
         /* Initialize Floating Action Bar,
@@ -172,19 +151,31 @@ public class MainActivity extends AppCompatActivity
 
         navigationView = findViewById(R.id.nav_view_MainActivity);
         navigationView.setNavigationItemSelectedListener(this);
+
+        avi = findViewById(R.id.avi);
     }
 
-    private void toggle() {
-        if(isMyServiceRunning(CollectDataService.class)) {
-            Log.d(TAG, "Service Stopped, user interrupt");
-            stopService(collectDataIntent);
-            showSnackBar("Service Stopped.");
-        }
-        else {
-            startService(collectDataIntent);
-            showSnackBar("Sending your data to cloud.");
-        }
+    private void addSnapShotListener() {
+        getAccInOrder.addSnapshotListener(MainActivity.this, new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                if (e != null) {
+                    Log.w(TAG, "Listen Failed", e);
+                }
+                assert queryDocumentSnapshots != null;
+                for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    if (doc.get("userId") != null) {
+                        currX = (long) doc.get("createdAtMillis");
+                        if (currX > prevX) {
+                            mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
+                            prevX = currX;
+                        }
+                    }
+                }
+            }
+        });
     }
+
 
     public void initFAB() {
         FloatingActionButton fab = findViewById(R.id.fab_MainActivity);
@@ -194,16 +185,6 @@ public class MainActivity extends AppCompatActivity
                 toggle();
             }
         });
-    }
-
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -229,28 +210,10 @@ public class MainActivity extends AppCompatActivity
         initRadioButtons(navigationView);
     }
 
-    private void setRadioButtonDefaultChecked(NavigationView navigationView) {
-        MenuItem menuItem = navigationView.getMenu().findItem(R.id.radio_buttonX_axis);
-        RadioButton radioButton = (RadioButton) menuItem.getActionView();
-        radioButton.setChecked(true);
-    }
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    public void showSnackBar(String message) {
-        Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
-    }
-
-    public void onPostRadioButtonChanged(int radioButtonIndex, boolean shouldResetGraph) {
+    public void onPostRadioButtonChanged(int radioButtonIndex, final boolean shouldResetGraph) {
         setCurrentAxis(radioButtonIndex);
+        preGraphReset();
         resetGraph(shouldResetGraph);
     }
 
@@ -272,6 +235,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (id == R.id.button_download_data_ActivityDrawer) {
+            //TODO: Download data
             showSnackBar("Downloading Data now");
         }
         else if (id == R.id.button_logout_ActivityDrawer) {
@@ -300,10 +264,6 @@ public class MainActivity extends AppCompatActivity
         if (shouldResetGraph) {
             setTitle();
             Log.i(TAG, "Loading data for axis: " + getCurrentAxis());
-            /*db.collection("AccelerometerReadings")
-                    .orderBy("createdAtMillis")
-                    .whereGreaterThan("createdAtMillis", lowerLimitTime)
-                    .get()*/
             getAccInOrder.limit(1000).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
@@ -311,7 +271,7 @@ public class MainActivity extends AppCompatActivity
                         if (task.getResult() != null && task.isSuccessful()) {
                             int index = 0;
                             Log.d(TAG, "Size of data recieved:" + task.getResult().size());
-                            DataPoint[] points = new DataPoint[1000];
+                            final DataPoint[] points = new DataPoint[1000];
                             long prevX = -1, currX;
                             for (QueryDocumentSnapshot doc : task.getResult()) {
                                 currX = (long)doc.get("createdAtMillis");
@@ -327,35 +287,31 @@ public class MainActivity extends AppCompatActivity
                             }
 //                            Log.i(TAG, "Actual number of points collected: " + index);
                             if (index > 0) {
-                                mSeries.resetData(Arrays.copyOfRange(points, 0, index));
+                                final int finalIndex = index;
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mSeries.resetData(Arrays.copyOfRange(points, 0, finalIndex));
+                                    }
+                                }).start();
+//                                mSeries.resetData(Arrays.copyOfRange(points, 0, index));
                             }
+
                         }
                         else {
                             Log.e(TAG, "Complete database GET FAILED", task.getException());
                         }
                     }
+                }).continueWith(new Continuation<QuerySnapshot, Object>() {
+                    @Override
+                    public Object then(@NonNull Task<QuerySnapshot> task) {
+                        postGraphReset();
+                        return null;
+                    }
                 });
         }
     }
 
-    private void setTitle() {
-        graphView.setTitle("Accelerometer: " + getCurrentAxis());
-    }
-
-    private void setCurrentAxis(int axis) {
-        if (axis == X_AXIS_INDEX)
-            currentAxis = "x_axis";
-        else if (axis == Y_AXIS_INDEX)
-            currentAxis = "y_axis";
-        else if (axis == Z_AXIS_INDEX)
-            currentAxis = "z_axis";
-        else
-            currentAxis = "x_axis";
-    }
-
-    private String getCurrentAxis() {
-        return currentAxis;
-    }
 
     private void initRadioButtons(NavigationView navigationView) {
         Menu menu = navigationView.getMenu();
@@ -397,4 +353,82 @@ public class MainActivity extends AppCompatActivity
             });
         }
     }
+
+    private void postGraphReset() {
+        avi.hide();
+    }
+
+    private void preGraphReset() {
+        avi.show();
+    }
+
+    private void setTitle() {
+        graphView.setTitle("Accelerometer: " + getCurrentAxis());
+    }
+
+    private void setRadioButtonDefaultChecked(NavigationView navigationView) {
+        MenuItem menuItem = navigationView.getMenu().findItem(R.id.radio_buttonX_axis);
+        RadioButton radioButton = (RadioButton) menuItem.getActionView();
+        radioButton.setChecked(true);
+    }
+
+    private void toggle() {
+        if(isMyServiceRunning(CollectDataService.class)) {
+            Log.d(TAG, "Service Stopped, user interrupt");
+            stopService(collectDataIntent);
+            showSnackBar("Service Stopped.");
+        }
+        else {
+            startService(collectDataIntent);
+            showSnackBar("Sending your data to cloud.");
+        }
+    }
+
+    private void setCurrentAxis(int axis) {
+        if (axis == X_AXIS_INDEX)
+            currentAxis = "x_axis";
+        else if (axis == Y_AXIS_INDEX)
+            currentAxis = "y_axis";
+        else if (axis == Z_AXIS_INDEX)
+            currentAxis = "z_axis";
+        else
+            currentAxis = "x_axis";
+    }
+
+    private String getCurrentAxis() {
+        return currentAxis;
+    }
+
+    public void showSnackBar(String message) {
+        Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+    /*void startAnim(){
+        avi.show();
+        // or avi.smoothToShow();
+    }
+
+    void stopAnim(){
+        avi.hide();
+        // or avi.smoothToHide();
+    }*/
 }
