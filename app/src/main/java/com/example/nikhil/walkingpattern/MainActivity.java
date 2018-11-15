@@ -6,7 +6,6 @@ package com.example.nikhil.walkingpattern;
  * 3. Create a logo which shows the orientation of selected axis
  * 4. Create a Date Picker
  * 5. Eradicate all the static constant Strings
- * 6. Query for last hour only if not specified : Done
  * */
 
 import android.app.ActivityManager;
@@ -30,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
@@ -50,7 +50,7 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
-import com.wang.avi.AVLoadingIndicatorView;
+//import com.wang.avi.AVLoadingIndicatorView;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -77,9 +77,9 @@ public class MainActivity extends AppCompatActivity
     private NavigationView navigationView;
 
     private long prevX = -1, currX;
-    private GraphView graphView;
-
-    private AVLoadingIndicatorView avi;
+	
+	//    private AVLoadingIndicatorView avi;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,17 +111,22 @@ public class MainActivity extends AppCompatActivity
 
         addSnapShotListener();
     }
-    
-    private void initGraphView() {
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		addSnapShotListener();
+	}
+	
+	private void initGraphView() {
         collectDataIntent = new Intent(this, CollectDataService.class);
-        graphView = findViewById(R.id.graph_view_MainActivity);
+		GraphView graphView = findViewById(R.id.graph_view_MainActivity);
         mSeries = new LineGraphSeries<>();
         graphView.addSeries(mSeries);
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
         graphView.getViewport().setMaxX(1000);
         graphView.getViewport().setScalable(true);
-        setTitle();
 
         String dateformat = "mm:ss.SSS";
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateformat);
@@ -154,7 +159,8 @@ public class MainActivity extends AppCompatActivity
         navigationView = findViewById(R.id.nav_view_MainActivity);
         navigationView.setNavigationItemSelectedListener(this);
 
-        avi = findViewById(R.id.avi);
+//        avi = findViewById(R.id.avi);
+        progressBar = findViewById(R.id.progressBar);
     }
 
     private void addSnapShotListener() {
@@ -260,11 +266,14 @@ public class MainActivity extends AppCompatActivity
         for (CompoundButton compoundButton: radioButtons) compoundButton.setChecked(false);
         radioButtons[index].setChecked(true);
     }
-
-    private void resetGraph(boolean shouldResetGraph) {
+	
+	private String getCurrentSensor() {
+    	return "Accelerometer";
+	}
+	
+	private void resetGraph(boolean shouldResetGraph) {
         Log.i(TAG, "Reset graph: " + shouldResetGraph);
         if (shouldResetGraph) {
-            setTitle();
             Log.i(TAG, "Loading data for axis: " + getCurrentAxis());
             getAccInOrder.limit(1000).get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -357,16 +366,19 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void postGraphReset() {
-        avi.hide();
+		setTitle(getCurrentSensor() + ": " + getCurrentAxis());
+//        avi.hide();
+        progressBar.setVisibility(View.INVISIBLE);
     }
 
     private void preGraphReset() {
-        avi.show();
+//        avi.show();
+        progressBar.setVisibility(View.VISIBLE);
     }
 
-    private void setTitle() {
-        graphView.setTitle("Accelerometer: " + getCurrentAxis());
-    }
+//    private void setTitle() {
+//        graphView.setTitle("Accelerometer: " + getCurrentAxis());
+//    }
 
     private void setRadioButtonDefaultChecked(NavigationView navigationView) {
         MenuItem menuItem = navigationView.getMenu().findItem(R.id.radio_buttonX_axis);
@@ -376,12 +388,17 @@ public class MainActivity extends AppCompatActivity
 
     private void toggle() {
         if(isMyServiceRunning(CollectDataService.class)) {
+			stopService(collectDataIntent);
             Log.d(TAG, "Service Stopped, user interrupt");
-            stopService(collectDataIntent);
             showSnackBar("Service Stopped.");
         }
         else {
-            startService(collectDataIntent);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				startForegroundService(collectDataIntent);
+			} else {
+				startService(collectDataIntent);
+			}
+//            startService(collectDataIntent);
             showSnackBar("Sending your data to cloud.");
         }
     }
