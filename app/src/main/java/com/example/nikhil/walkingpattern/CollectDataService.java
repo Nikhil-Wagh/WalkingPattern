@@ -81,7 +81,8 @@ public class CollectDataService extends Service implements SensorEventListener {
     private void toFirebaseFireStore(float[] values) {
         SensorReadings accelerometerReadings = new SensorReadings(values, currentUser.getUid());
         String ACCELEROMETERPATH = "AccelerometerReadings";
-        db.collection(ACCELEROMETERPATH)
+        db.collection("AppData").document(getUserId())
+                .collection(ACCELEROMETERPATH)
                 .add(accelerometerReadings)
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -109,4 +110,9 @@ public class CollectDataService extends Service implements SensorEventListener {
         mSensorManager.unregisterListener(this, mSensor);
         Log.d(TAG, "Service stopped");
     }
+    
+    private String getUserId() {
+        return FirebaseAuth.getInstance().getUid();
+    }
+    
 }

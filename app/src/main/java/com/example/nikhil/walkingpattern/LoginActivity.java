@@ -1,10 +1,10 @@
 package com.example.nikhil.walkingpattern;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -17,13 +17,22 @@ import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -99,15 +108,84 @@ public class LoginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             Log.d(TAG, "signInWithCredential:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            updateUI(user);
                         }
                         else {
                             showSnackBar("Login failed");
                         }
                     }
-                });
+                }).continueWith(new Continuation<AuthResult, Object>() {
+                    @Override
+                    public Object then(@NonNull Task<AuthResult> task) throws Exception {
+                        if (task.isSuccessful()) {
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+							FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+									.setTimestampsInSnapshotsEnabled(true)
+									.build();
+							db.setFirestoreSettings(settings);
+                            getNewUserSnapshot(db);
+                            updateUI(FirebaseAuth.getInstance().getCurrentUser());
+                            /*db.collection("AppData")
+                                    .add(UserSnapshot)
+                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                        @Override
+                                        public void onSuccess(DocumentReference documentReference) {
+                                            FirebaseUser user = mAuth.getCurrentUser();
+                                            updateUI(user);
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            showSnackBar("User Login Failed");
+                                        }
+                                    });*/
+                        }
+                        return null;
+                    }
+        });
 
+    }
+    
+    private void getNewUserSnapshot(FirebaseFirestore db) {
+        try {
+            Map<String, Integer> map = new HashMap<>();
+            map.put("accelerometer_readings_count", 0);
+            DocumentReference document = db.collection("AppData").document(mAuth.getCurrentUser().getUid());
+            document.collection("AccelerometerReadings").add(map)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.i(TAG, "AccelerometerReadings Collection created successfully");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            showSnackBar("AccelerometerReadings collection could not be created.");
+                            Log.e(TAG, "AccelerometerReadings collection could not be created.", e);
+                        }
+                    });
+
+            map.clear();
+            map.put("gyroscope_readings_count", 0);
+            document.collection("GyroscopeReadings").add(map)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.i(TAG, "GyroscopeReadings collection created successfully");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            showSnackBar("GyroscopeReadings collection could not be created");
+                            Log.e(TAG, "GyroscopeReadings collection could not be created", e);
+                        }
+                    });
+
+        } catch (NullPointerException e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 
     private void updateUI(FirebaseUser user) {

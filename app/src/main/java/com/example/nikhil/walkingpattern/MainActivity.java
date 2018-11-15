@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity
     private final int Y_AXIS_INDEX = 1;
     private final int Z_AXIS_INDEX = 2;
 
-    private FirebaseFirestore db;
     private Query getAccInOrder;
 
     private CompoundButton[] radioButtons;
@@ -92,11 +91,11 @@ public class MainActivity extends AppCompatActivity
         initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
 
         initFireBase(); // Get database instance and initialize database query
-
+//        Log.i(TAG, FirebaseAuth.getInstance().getUid() + " : " + FirebaseAuth.getInstance().getCurrentUser().getUid());
     }
 
     private void initFireBase() {
-        db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
@@ -104,12 +103,15 @@ public class MainActivity extends AppCompatActivity
 //        lowerLimitTime = new Date().getTime() - 600 * 1000;
         long lowerLimitTime = new Date().getTime() - 300 * 1000; // last 5 min
         Log.i(TAG, "Lower limit of X values: " + lowerLimitTime);
-        getAccInOrder = db.collection("AccelerometerReadings").orderBy("createdAtMillis").whereGreaterThan("createdAtMillis", lowerLimitTime);
+        getAccInOrder = db.collection("AppData").document(getUserId())
+				.collection("AccelerometerReadings")
+				.orderBy("createdAtMillis")
+				.whereGreaterThan("createdAtMillis", lowerLimitTime);
         Log.i(TAG, "Firebase initialized");
 
         addSnapShotListener();
     }
-
+    
     private void initGraphView() {
         collectDataIntent = new Intent(this, CollectDataService.class);
         graphView = findViewById(R.id.graph_view_MainActivity);
@@ -398,7 +400,12 @@ public class MainActivity extends AppCompatActivity
     private String getCurrentAxis() {
         return currentAxis;
     }
-
+    
+    private String getUserId() {
+        return FirebaseAuth.getInstance().getUid();
+    }
+    
+    
     public void showSnackBar(String message) {
         Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
