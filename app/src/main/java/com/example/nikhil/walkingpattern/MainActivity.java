@@ -11,18 +11,25 @@ package com.example.nikhil.walkingpattern;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,6 +41,8 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.getkeepsafe.taptargetview.TapTarget;
+import com.getkeepsafe.taptargetview.TapTargetSequence;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -85,16 +94,58 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-
+        
         initUI(); // Initialize UI for this Acitivity
 
         initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
 
         initFireBase(); // Get database instance and initialize database query
 //        Log.i(TAG, FirebaseAuth.getInstance().getUid() + " : " + FirebaseAuth.getInstance().getCurrentUser().getUid());
+		doForTargets();
     }
-
-    private void initFireBase() {
+	
+	private void doForTargets() {
+    	if (firstRun()) {
+    		showTargets();
+		}
+	}
+	
+	private boolean firstRun() {
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		if(!prefs.getBoolean("firstTime", false)) {
+			SharedPreferences.Editor editor = prefs.edit();
+			editor.putBoolean("firstTime", true);
+			editor.apply();
+			return true;
+		}
+		return false;
+	}
+	
+	private void showTargets() {
+		final Drawable droid = ContextCompat.getDrawable(this, R.drawable.ic_chart_line);
+    	new TapTargetSequence(this).
+				targets(
+						TapTarget.forToolbarNavigationIcon((Toolbar) findViewById(R.id.toolbar_MainActivity),
+								"Options",
+								"You could change the axis or just log out of the app.")
+								.cancelable(false),
+						TapTarget.forView(
+								findViewById(R.id.fab_MainActivity),
+								"Send Data",
+								"This button will allow you to share your walking pattern with us.")
+								.transparentTarget(true)
+								.cancelable(false),
+						TapTarget.forView(
+								findViewById(R.id.graph_view_MainActivity),
+								"Graphs",
+								"Your selected graphs will appear here.")
+								.targetRadius(60)
+								.icon(droid)
+								.cancelable(false)
+				).start();
+	}
+	
+	private void initFireBase() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
