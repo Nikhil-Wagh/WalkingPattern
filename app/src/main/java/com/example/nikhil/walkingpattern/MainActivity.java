@@ -1,7 +1,7 @@
 package com.example.nikhil.walkingpattern;
 
 /* TODO:
- * 1. Send Nav Drawer to back and toolbar to front
+ * 1. Send Nav Drawer to back and toolbar to front (Although not recommended by google)
  * 2. Create it a pseudo tabbed activity
  * 3. Create a logo which shows the orientation of selected axis
  * 4. Create a Date Picker
@@ -12,7 +12,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,8 +27,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.SpannableString;
-import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -59,13 +56,14 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
-//import com.wang.avi.AVLoadingIndicatorView;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
 import javax.annotation.Nullable;
+
+//import com.wang.avi.AVLoadingIndicatorView;
 
 
 public class MainActivity extends AppCompatActivity
@@ -231,6 +229,14 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 }
+                if (queryDocumentSnapshots.isEmpty()) {
+                	TextView textView = findViewById(R.id.no_points_textview_MainActivity);
+                	textView.setVisibility(View.VISIBLE);
+				}
+				else {
+					TextView textView = findViewById(R.id.no_points_textview_MainActivity);
+					textView.setVisibility(View.GONE);
+				}
             }
         });
     }

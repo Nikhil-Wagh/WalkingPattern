@@ -25,11 +25,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />-->
 
+    <TextView
+        android:id="@+id/no_points_textview_MainActivity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="No activity detected in the past 10 mins. Press start to continue"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/graph_view_MainActivity"/>
+
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graph_view_MainActivity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="@dimen/GraphViewMargin"/>
+        android:layout_margin="@dimen/GraphViewMargin">
+    </com.jjoe64.graphview.GraphView>
 
     <ProgressBar
         android:id="@+id/progressBar"
