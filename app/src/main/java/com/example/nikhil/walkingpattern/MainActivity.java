@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -32,6 +33,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity
     private Intent collectDataIntent;
     private final String TAG = "MainActivity";
     private LineGraphSeries<DataPoint> mSeries;
+    private GraphView graphView;
 
     private String currentAxis = "x_axis";
     private final int X_AXIS_INDEX = 0;
@@ -173,7 +176,7 @@ public class MainActivity extends AppCompatActivity
 	
 	private void initGraphView() {
         collectDataIntent = new Intent(this, CollectDataService.class);
-		GraphView graphView = findViewById(R.id.graph_view_MainActivity);
+		graphView = findViewById(R.id.graph_view_MainActivity);
         mSeries = new LineGraphSeries<>();
         graphView.addSeries(mSeries);
         graphView.getViewport().setXAxisBoundsManual(true);
@@ -183,13 +186,34 @@ public class MainActivity extends AppCompatActivity
 
         String dateformat = "mm:ss.SSS";
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateformat);
-
+        
+        graphView.setHorizontalScrollBarEnabled(true);
         graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
         graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
+        graphView.setTitle(getGraphTitle());
+//        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Time (millis)");
+//        graphView.getGridLabelRenderer().setVerticalAxisTitle("Sensor Value");
+//        TODO: labels and title
     }
-
-
-    private void initUI() {
+	
+	private String getGraphTitle() {
+    	String title = getCurrentSensor() + ": ";
+		switch (getCurrentAxis()) {
+			case "x_axis":
+				title += "X - axis";
+				break;
+			case "y_axis":
+				title += "Y - axis";
+				break;
+			default:
+				title += "Z - axis";
+				break;
+		}
+		return title;
+	}
+	
+	
+	private void initUI() {
         /* Initialize Floating Action Bar,
         Navigation Header (nav_header_test.xml)
         and final Navigation Drawer */
@@ -251,6 +275,7 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+            	//TODO: Show alert, asking user to start walking
                 toggle();
             }
         });
@@ -448,7 +473,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void postGraphReset() {
-		setTitle(getCurrentSensor() + ": " + getCurrentAxis());
+		graphView.setTitle(getGraphTitle());
 //        avi.hide();
         progressBar.setVisibility(View.INVISIBLE);
     }
@@ -506,7 +531,18 @@ public class MainActivity extends AppCompatActivity
     
     
     public void showSnackBar(String message) {
-        Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
+    	/*Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG);
+    	View snackView = getLayoutInflater().inflate(R.layout.activity_test, null);
+		Snackbar.SnackbarLayout snackbarLayout = (Snackbar.SnackbarLayout) snackbar.getView();
+		CoordinatorLayout.LayoutParams parentParams = (CoordinatorLayout.LayoutParams) snackbarLayout.getLayoutParams();
+		parentParams.height = 30;
+		parentParams.width = FrameLayout.LayoutParams.MATCH_PARENT;
+		parentParams.setMargins(0, 0, 0, 0);
+		snackbarLayout.setLayoutParams(parentParams);
+		snackbarLayout.addView(snackView, 0);
+		snackbar.show();*/
+    	
+    	Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {

@@ -14,6 +14,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:text="No activity detected in the past 10 mins. Press start to continue"
+        android:background="@color/red"
+        android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
