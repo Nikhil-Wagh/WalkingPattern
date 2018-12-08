@@ -42,6 +42,8 @@ import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetSequence;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -52,6 +54,8 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.HttpsCallableResult;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
@@ -300,8 +304,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (id == R.id.button_download_data_ActivityDrawer) {
-            //TODO: Download data
-            showSnackBar("Downloading Data now");
+            downloadFile();
+//            showSnackBar("Downloading Data now");
         }
         else if (id == R.id.button_logout_ActivityDrawer) {
             logout();
@@ -310,8 +314,29 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
+    
+    private void downloadFile() {
+        FirebaseFunctions mFunctions = FirebaseFunctions.getInstance();
+        mFunctions.getHttpsCallable("exportData")
+				.call()
+				.addOnSuccessListener(new OnSuccessListener<HttpsCallableResult>() {
+					@Override
+					public void onSuccess(HttpsCallableResult httpsCallableResult) {
+						showSnackBar("File Download Successfull");
+					}
+				})
+				.addOnFailureListener(new OnFailureListener() {
+					@Override
+					public void onFailure(@NonNull Exception e) {
+						showSnackBar("File download failed");
+						Log.e(TAG, e.getMessage());
+					}
+				});
+    }
+    
     private void logout() {
+    	FirebaseAuth.getInstance().signOut();
+    	startActivity(new Intent(MainActivity.this, LoginActivity.class));
         //TODO: Logout User here
     }
 

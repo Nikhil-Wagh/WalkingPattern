@@ -34,6 +34,12 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+* Add metadata to database
+* 1. Accelerometer, Gyroscope device details
+* 2. User email Id, User name
+* */
+
 public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_SIGN_IN = 9001;
@@ -45,9 +51,13 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+	
+		mAuth = FirebaseAuth.getInstance();
+		updateUI(mAuth.getCurrentUser());
+		
         setContentView(R.layout.activity_login);
 
-        Log.d(TAG, "OnCreate");
+        Log.d(TAG, "OnCreate: Started");
 
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -55,7 +65,6 @@ public class LoginActivity extends AppCompatActivity {
                 .requestScopes(new Scope(Scopes.PROFILE))
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
-        mAuth = FirebaseAuth.getInstance();
 
         SignInButton signInButton = findViewById(R.id.button_google_sign_in_LoginActivity);
         signInButton.setOnClickListener(new View.OnClickListener() {
@@ -64,15 +73,12 @@ public class LoginActivity extends AppCompatActivity {
                 signIn();
             }
         });
+		Log.d(TAG, "OnCreate: Completed");
     }
 
     @Override
     public void onStart() {
         super.onStart();
-
-        Log.d(TAG, "OnStart");
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        updateUI(currentUser);
     }
 
     private void signIn() {

@@ -8,23 +8,6 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_test">
 
-
-<!--    <com.wang.avi.AVLoadingIndicatorView
-        android:id="@+id/avi"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:visibility="invisible"
-        app:indicatorColor="@color/ap_gray"
-        app:indicatorName="LineScalePulseOutRapidIndicator"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />-->
-
     <TextView
         android:id="@+id/no_points_textview_MainActivity"
         android:layout_width="match_parent"
