@@ -69,8 +69,6 @@ import java.util.Date;
 
 import javax.annotation.Nullable;
 
-//import com.wang.avi.AVLoadingIndicatorView;
-
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -196,22 +194,6 @@ public class MainActivity extends AppCompatActivity
 		//TODO y-labels incorrect for decimal values
     }
 	
-	private String getGraphTitle() {
-    	String title = getCurrentSensor() + ": ";
-		switch (getCurrentAxis()) {
-			case "x_axis":
-				title += "X - axis";
-				break;
-			case "y_axis":
-				title += "Y - axis";
-				break;
-			default:
-				title += "Z - axis";
-				break;
-		}
-		return title;
-	}
-	
 	
 	private void initUI() {
         /* Initialize Floating Action Bar,
@@ -235,8 +217,6 @@ public class MainActivity extends AppCompatActivity
 
         navigationView = findViewById(R.id.nav_view_MainActivity);
         navigationView.setNavigationItemSelectedListener(this);
-
-//        avi = findViewById(R.id.avi);
         progressBar = findViewById(R.id.progressBar);
     }
 
@@ -312,7 +292,7 @@ public class MainActivity extends AppCompatActivity
         resetGraph(shouldResetGraph);
     }
 
-//    @SuppressWarnings("StatementWithEmptyBody")
+    
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
@@ -331,7 +311,6 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.button_download_data_ActivityDrawer) {
             downloadFile();
-//            showSnackBar("Downloading Data now");
         }
         else if (id == R.id.button_logout_ActivityDrawer) {
             logout();
@@ -398,12 +377,10 @@ public class MainActivity extends AppCompatActivity
                                     points[index] = dataPoint;
                                     index++;
                                     prevX = currX;
-//                                    Log.i(TAG, "Loaded data created At: " + doc.get("createdAtMillis"));
                                 } else {
                                     Log.e(TAG, "X values not in ascending order," + prevX + " > " + currX);
                                 }
                             }
-//                            Log.i(TAG, "Actual number of points collected: " + index);
                             if (index > 0) {
                                 final int finalIndex = index;
                                 new Thread(new Runnable() {
@@ -412,7 +389,6 @@ public class MainActivity extends AppCompatActivity
                                         mSeries.resetData(Arrays.copyOfRange(points, 0, finalIndex));
                                     }
                                 }).start();
-//                                mSeries.resetData(Arrays.copyOfRange(points, 0, index));
                             }
 
                         }
@@ -465,7 +441,6 @@ public class MainActivity extends AppCompatActivity
                             DrawerLayout drawer = findViewById(R.id.drawer_layout);
                             drawer.closeDrawer(GravityCompat.START);
                         }
-//                        Log.i(TAG, "Current Axis: " + getCurrentAxis());
                     }
                 }
             });
@@ -474,18 +449,12 @@ public class MainActivity extends AppCompatActivity
 
     private void postGraphReset() {
 		graphView.setTitle(getGraphTitle());
-//        avi.hide();
         progressBar.setVisibility(View.INVISIBLE);
     }
 
     private void preGraphReset() {
-//        avi.show();
         progressBar.setVisibility(View.VISIBLE);
     }
-
-//    private void setTitle() {
-//        graphView.setTitle("Accelerometer: " + getCurrentAxis());
-//    }
 
     private void setRadioButtonDefaultChecked(NavigationView navigationView) {
         MenuItem menuItem = navigationView.getMenu().findItem(R.id.radio_buttonX_axis);
@@ -547,6 +516,22 @@ public class MainActivity extends AppCompatActivity
 		}.start();
  	}
 	
+	private String getGraphTitle() {
+		String title = getCurrentSensor() + ": ";
+		switch (getCurrentAxis()) {
+			case "x_axis":
+				title += "X - axis";
+				break;
+			case "y_axis":
+				title += "Y - axis";
+				break;
+			default:
+				title += "Z - axis";
+				break;
+		}
+		return title;
+	}
+ 
 	private void setCurrentAxis(int axis) {
         if (axis == X_AXIS_INDEX)
             currentAxis = "x_axis";
@@ -568,17 +553,6 @@ public class MainActivity extends AppCompatActivity
     
     
     public void showSnackBar(String message) {
-    	/*Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG);
-    	View snackView = getLayoutInflater().inflate(R.layout.activity_test, null);
-		Snackbar.SnackbarLayout snackbarLayout = (Snackbar.SnackbarLayout) snackbar.getView();
-		CoordinatorLayout.LayoutParams parentParams = (CoordinatorLayout.LayoutParams) snackbarLayout.getLayoutParams();
-		parentParams.height = 30;
-		parentParams.width = FrameLayout.LayoutParams.MATCH_PARENT;
-		parentParams.setMargins(0, 0, 0, 0);
-		snackbarLayout.setLayoutParams(parentParams);
-		snackbarLayout.addView(snackView, 0);
-		snackbar.show();*/
-    	
     	Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
     }
 
