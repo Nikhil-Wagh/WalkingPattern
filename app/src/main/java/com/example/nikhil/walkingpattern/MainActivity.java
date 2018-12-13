@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity
     private Intent collectDataIntent;
     private final String TAG = "MainActivity";
     private LineGraphSeries<DataPoint> mSeries;
-    private GraphView graphView;
+	private TextView graphTitle;
 
     private String currentAxis = "x_axis";
     private final int X_AXIS_INDEX = 0;
@@ -90,8 +90,7 @@ public class MainActivity extends AppCompatActivity
     private NavigationView navigationView;
 
     private long prevX = -1, currX;
-	
-	//    private AVLoadingIndicatorView avi;
+
     private ProgressBar progressBar;
     private FloatingActionButton fab;
 	
@@ -99,32 +98,14 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-//        test();
         initUI(); // Initialize UI for this Acitivity
 
         initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
 
         initFireBase(); // Get database instance and initialize database query
-//        Log.i(TAG, FirebaseAuth.getInstance().getUid() + " : " + FirebaseAuth.getInstance().getCurrentUser().getUid());
 		doForTargets();
     }
-	/*
-private void test() {
-	int count = 0;
-	do{
-		AlertDialog dialog;
-		dialog = getDialog(count);
-		dialog.show();
-		count++;
-	}while(count < 4);
-}
-
-private AlertDialog getDialog(int count) {
-	AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-	alertDialog.setTitle("Alert " + (count + 1));
-	alertDialog.setMessage("This is a alert");
-	return alertDialog;
-}*/
+	
 	
 	private void doForTargets() {
     	if (firstRun()) {
@@ -199,7 +180,7 @@ private AlertDialog getDialog(int count) {
 	
 	private void initGraphView() {
         collectDataIntent = new Intent(this, CollectDataService.class);
-		graphView = findViewById(R.id.graph_view_MainActivity);
+		GraphView graphView = findViewById(R.id.graph_view_MainActivity);
         mSeries = new LineGraphSeries<>();
         graphView.addSeries(mSeries);
         graphView.getViewport().setXAxisBoundsManual(true);
@@ -212,12 +193,10 @@ private AlertDialog getDialog(int count) {
         
         graphView.setHorizontalScrollBarEnabled(true);
         graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
+        graphView.getGridLabelRenderer().setPadding(130);
         graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
-        graphView.setTitle(getGraphTitle());
-		graphView.setTitleTextSize(50);
-//        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Time (millis)");
-//        graphView.getGridLabelRenderer().setVerticalAxisTitle("Sensor Value");
-		//TODO y-labels incorrect for decimal values
+        graphTitle = findViewById(R.id.text_view_graph_heading);
+        graphTitle.setText(getGraphTitle());
     }
 	
 	
@@ -268,7 +247,6 @@ private AlertDialog getDialog(int count) {
                 	textView.setVisibility(View.VISIBLE);
 				}
 				else {
-                	// TODO: add animation if possible
 					TextView textView = findViewById(R.id.no_points_textview_MainActivity);
 					textView.setVisibility(View.GONE);
 				}
@@ -479,7 +457,8 @@ private AlertDialog getDialog(int count) {
     }
 
     private void postGraphReset() {
-		graphView.setTitle(getGraphTitle());
+		graphTitle.setText(getGraphTitle());
+//		graphView.setTitle(getGraphTitle());
         progressBar.setVisibility(View.INVISIBLE);
     }
 
