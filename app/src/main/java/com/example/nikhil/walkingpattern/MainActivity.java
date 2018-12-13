@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
-        
+//        test();
         initUI(); // Initialize UI for this Acitivity
 
         initGraphView(); // Initialize Graph View and LineGraphSeries mSeries
@@ -106,6 +106,23 @@ public class MainActivity extends AppCompatActivity
 //        Log.i(TAG, FirebaseAuth.getInstance().getUid() + " : " + FirebaseAuth.getInstance().getCurrentUser().getUid());
 		doForTargets();
     }
+	/*
+private void test() {
+	int count = 0;
+	do{
+		AlertDialog dialog;
+		dialog = getDialog(count);
+		dialog.show();
+		count++;
+	}while(count < 4);
+}
+
+private AlertDialog getDialog(int count) {
+	AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+	alertDialog.setTitle("Alert " + (count + 1));
+	alertDialog.setMessage("This is a alert");
+	return alertDialog;
+}*/
 	
 	private void doForTargets() {
     	if (firstRun()) {
