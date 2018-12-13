@@ -97,6 +97,7 @@ public class CollectDataService extends Service implements SensorEventListener {
 		NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
 		channel.setImportance(NotificationManager.IMPORTANCE_NONE);
 		channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+		channel.setShowBadge(true);
 		notificationManager.createNotificationChannel(channel);
  		return channelId;
 	}

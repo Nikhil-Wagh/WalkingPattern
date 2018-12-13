@@ -9,16 +9,17 @@ package com.example.nikhil.walkingpattern;
  * */
 
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -33,7 +34,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity
         graphView.setTitle(getGraphTitle());
 //        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Time (millis)");
 //        graphView.getGridLabelRenderer().setVerticalAxisTitle("Sensor Value");
-//        TODO: labels and title
+		//TODO y-labels incorrect for decimal values
     }
 	
 	private String getGraphTitle() {
@@ -257,11 +257,12 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                 }
-                if (queryDocumentSnapshots.isEmpty()) {
+                if (mSeries.isEmpty()) {
                 	TextView textView = findViewById(R.id.no_points_textview_MainActivity);
                 	textView.setVisibility(View.VISIBLE);
 				}
 				else {
+                	// TODO: add animation if possible
 					TextView textView = findViewById(R.id.no_points_textview_MainActivity);
 					textView.setVisibility(View.GONE);
 				}
@@ -276,8 +277,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
             	//TODO: Show alert, asking user to start walking
-                toggle();
-            }
+				toggle();
+			}
         });
     }
 
@@ -362,7 +363,6 @@ public class MainActivity extends AppCompatActivity
     private void logout() {
     	FirebaseAuth.getInstance().signOut();
     	startActivity(new Intent(MainActivity.this, LoginActivity.class));
-        //TODO: Logout User here
     }
 
     private void onMenuItemSelectedBehaviour(CompoundButton compundButton, int index) {
@@ -500,17 +500,54 @@ public class MainActivity extends AppCompatActivity
             showSnackBar("Service Stopped.");
         }
         else {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				startForegroundService(collectDataIntent);
-			} else {
-				startService(collectDataIntent);
-			}
-//            startService(collectDataIntent);
-            showSnackBar("Sending your data to cloud.");
+        	alertAndStartService();
         }
     }
-
-    private void setCurrentAxis(int axis) {
+	
+	private void startMyService() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			startForegroundService(collectDataIntent);
+		} else {
+			startService(collectDataIntent);
+		}
+		showSnackBar("Sending your data to cloud.");
+	}
+	
+	private void alertAndStartService() {
+    	/*new AlertDialog.Builder(this)
+				.setTitle("Device Orientation")
+				.setMessage("Please make sure when you put the device in your pocket, it is UPSIDE UP.")
+				.setPositiveButton("OK", null)
+				.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_phone_android_black_24dp))
+				.show();*/
+    
+    	final AlertDialog.Builder startWalkingAlertBuilder = new AlertDialog.Builder(this)
+				.setTitle("NOTE")
+				.setCancelable(false)
+				.setNegativeButton("I don't want to walk right now.", null)
+				.setMessage("");
+    	final AlertDialog alertDialog = startWalkingAlertBuilder.create();
+		alertDialog.show();
+		new CountDownTimer(1000 * 15, 1000) {
+			@Override
+			public void onTick(long millisUntilFinished) {
+				if (!alertDialog.isShowing())
+					return;
+				Log.d(TAG, "millisUntilFinished: " + millisUntilFinished);
+				alertDialog.setMessage(getString(R.string.remaining_time, (int)(millisUntilFinished / 1000)));
+			}
+			
+			@Override
+			public void onFinish() {
+				if (alertDialog.isShowing()) {
+					alertDialog.dismiss();
+					startMyService();
+				}
+			}
+		}.start();
+ 	}
+	
+	private void setCurrentAxis(int axis) {
         if (axis == X_AXIS_INDEX)
             currentAxis = "x_axis";
         else if (axis == Y_AXIS_INDEX)

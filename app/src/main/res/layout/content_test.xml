@@ -25,7 +25,15 @@
         android:id="@+id/graph_view_MainActivity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="@dimen/GraphViewMargin">
+        android:layout_margin="@dimen/GraphViewMargin"
+        android:outlineAmbientShadowColor="@color/red"
+        android:outlineSpotShadowColor="@color/black_overlay">
+        <!--<View-->
+            <!--android:layout_width="fill_parent"-->
+            <!--android:layout_height="0.2dp"-->
+            <!--android:id="@+id/separator"-->
+            <!--android:visibility="visible"-->
+            <!--android:background="@android:color/darker_gray"/>-->
     </com.jjoe64.graphview.GraphView>
 
     <ProgressBar
