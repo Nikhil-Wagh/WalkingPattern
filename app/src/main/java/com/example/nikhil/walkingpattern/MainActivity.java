@@ -506,12 +506,12 @@ private AlertDialog getDialog(int count) {
 	}
 	
 	private void alertAndStartService() {
-    	/*new AlertDialog.Builder(this)
+    	new AlertDialog.Builder(this)
 				.setTitle("Device Orientation")
 				.setMessage("Please make sure when you put the device in your pocket, it is UPSIDE UP.")
 				.setPositiveButton("OK", null)
 				.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_phone_android_black_24dp))
-				.show();*/
+				.show();
     
     	final AlertDialog.Builder startWalkingAlertBuilder = new AlertDialog.Builder(this)
 				.setTitle(getString(R.string.start_walking_alert_title))
