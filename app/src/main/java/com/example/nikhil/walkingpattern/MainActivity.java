@@ -92,8 +92,8 @@ public class MainActivity extends AppCompatActivity
 	
 	//    private AVLoadingIndicatorView avi;
     private ProgressBar progressBar;
-
-    @Override
+	
+	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
@@ -129,19 +129,19 @@ public class MainActivity extends AppCompatActivity
     	new TapTargetSequence(this).
 				targets(
 						TapTarget.forToolbarNavigationIcon((Toolbar) findViewById(R.id.toolbar_MainActivity),
-								"Options",
-								"You could change the axis or just log out of the app.")
+								getString(R.string.tap_target_navigation_icon_title),
+								getString(R.string.tap_target_navigation_icon_description))
 								.cancelable(false),
 						TapTarget.forView(
 								findViewById(R.id.fab_MainActivity),
-								"Send Data",
-								"This button will allow you to share your walking pattern with us.")
+								getString(R.string.tap_target_fab_title),
+								getString(R.string.tap_target_fab_description))
 								.transparentTarget(true)
 								.cancelable(false),
 						TapTarget.forView(
 								findViewById(R.id.graph_view_MainActivity),
-								"Graphs",
-								"Your selected graphs will appear here.")
+								getString(R.string.tap_target_graphs_title),
+								getString(R.string.tap_target_graphs_description))
 								.targetRadius(60)
 								.icon(droid)
 								.cancelable(false)
@@ -157,10 +157,16 @@ public class MainActivity extends AppCompatActivity
 //        lowerLimitTime = new Date().getTime() - 600 * 1000;
         long lowerLimitTime = new Date().getTime() - 300 * 1000; // last 5 min
         Log.i(TAG, "Lower limit of X values: " + lowerLimitTime);
-        getAccInOrder = db.collection("AppData").document(getUserId())
-				.collection("AccelerometerReadings")
-				.orderBy("createdAtMillis")
-				.whereGreaterThan("createdAtMillis", lowerLimitTime);
+        
+		String appCollectionPath = getString(R.string.app_collection_path);
+		String accCollectionPath = getString(R.string.acc_collection_path);
+		String orderByParameter = getString(R.string.order_by_parameter);
+		String greaterThanParameter = getString(R.string.where_greater_than_parameter);
+		
+		getAccInOrder = db.collection(appCollectionPath).document(getUserId())
+				.collection(accCollectionPath)
+				.orderBy(orderByParameter)
+				.whereGreaterThan(greaterThanParameter, lowerLimitTime);
         Log.i(TAG, "Firebase initialized");
 
         addSnapShotListener();
@@ -182,7 +188,7 @@ public class MainActivity extends AppCompatActivity
         graphView.getViewport().setMaxX(1000);
         graphView.getViewport().setScalable(true);
 
-        String dateformat = "mm:ss.SSS";
+        String dateformat = getString(R.string.database_date_format);
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateformat);
         
         graphView.setHorizontalScrollBarEnabled(true);
@@ -230,7 +236,7 @@ public class MainActivity extends AppCompatActivity
                 assert queryDocumentSnapshots != null;
                 for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                     if (doc.get("userId") != null) {
-                        currX = (long) doc.get("createdAtMillis");
+                        currX = (long) doc.get(getString(R.string.order_by_parameter));
                         if (currX > prevX) {
                             mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
                             prevX = currX;
@@ -346,7 +352,7 @@ public class MainActivity extends AppCompatActivity
 
     private void onMenuItemSelectedBehaviour(CompoundButton compundButton, int index) {
         if (compundButton.isChecked()) {
-            showSnackBar("Atleast one of the axis has to be set");
+            showSnackBar(getString(R.string.atleast_one_axis_should_be_set));
             return;
         }
         for (CompoundButton compoundButton: radioButtons) compoundButton.setChecked(false);
@@ -371,7 +377,7 @@ public class MainActivity extends AppCompatActivity
                             final DataPoint[] points = new DataPoint[1000];
                             long prevX = -1, currX;
                             for (QueryDocumentSnapshot doc : task.getResult()) {
-                                currX = (long)doc.get("createdAtMillis");
+                                currX = (long)doc.get(getString(R.string.order_by_parameter));
                                 if (prevX < currX) {
                                     DataPoint dataPoint = new DataPoint(currX, (double) doc.get(getCurrentAxis()));
                                     points[index] = dataPoint;
@@ -466,7 +472,7 @@ public class MainActivity extends AppCompatActivity
         if(isMyServiceRunning(CollectDataService.class)) {
 			stopService(collectDataIntent);
             Log.d(TAG, "Service Stopped, user interrupt");
-            showSnackBar("Service Stopped.");
+            showSnackBar(getString(R.string.service_stopped_message));
         }
         else {
         	alertAndStartService();
@@ -479,7 +485,7 @@ public class MainActivity extends AppCompatActivity
 		} else {
 			startService(collectDataIntent);
 		}
-		showSnackBar("Sending your data to cloud.");
+		showSnackBar(getString(R.string.service_started_message));
 	}
 	
 	private void alertAndStartService() {
@@ -491,10 +497,10 @@ public class MainActivity extends AppCompatActivity
 				.show();*/
     
     	final AlertDialog.Builder startWalkingAlertBuilder = new AlertDialog.Builder(this)
-				.setTitle("NOTE")
+				.setTitle(getString(R.string.start_walking_alert_title))
 				.setCancelable(false)
-				.setNegativeButton("I don't want to walk right now.", null)
-				.setMessage("");
+				.setNegativeButton(getString(R.string.start_walking_alert_negative_button_message), null)
+				.setMessage(""); // Had to set something, else dynamic changes won't display
     	final AlertDialog alertDialog = startWalkingAlertBuilder.create();
 		alertDialog.show();
 		new CountDownTimer(1000 * 15, 1000) {
@@ -502,8 +508,8 @@ public class MainActivity extends AppCompatActivity
 			public void onTick(long millisUntilFinished) {
 				if (!alertDialog.isShowing())
 					return;
-				Log.d(TAG, "millisUntilFinished: " + millisUntilFinished);
-				alertDialog.setMessage(getString(R.string.remaining_time, (int)(millisUntilFinished / 1000)));
+//				Log.d(TAG, "millisUntilFinished: " + millisUntilFinished);
+				alertDialog.setMessage(getString(R.string.start_walking_alert_message, (int)(millisUntilFinished / 1000)));
 			}
 			
 			@Override
@@ -517,19 +523,26 @@ public class MainActivity extends AppCompatActivity
  	}
 	
 	private String getGraphTitle() {
-		String title = getCurrentSensor() + ": ";
-		switch (getCurrentAxis()) {
-			case "x_axis":
-				title += "X - axis";
-				break;
-			case "y_axis":
-				title += "Y - axis";
-				break;
-			default:
-				title += "Z - axis";
-				break;
+		if (getCurrentSensor().equals("Accelerometer")) {
+			switch (getCurrentAxis()) {
+				case "x_axis":
+					return getString(R.string.acc_x);
+				case "y_axis":
+					return getString(R.string.acc_y);
+				default:
+					return getString(R.string.acc_z);
+			}
 		}
-		return title;
+		else {
+			switch (getCurrentAxis()) {
+				case "x_axis":
+					return getString(R.string.gyro_x);
+				case "y_axis":
+					return getString(R.string.gyro_y);
+				default:
+					return getString(R.string.gyro_z);
+			}
+		}
 	}
  
 	private void setCurrentAxis(int axis) {
