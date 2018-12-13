@@ -13,8 +13,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:text="No activity detected in the past 10 mins. Press start to continue"
-        android:background="@color/red"
+        android:text="@string/no_activity_message"
+        android:background="@color/colorAlertTextView"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -25,15 +25,7 @@
         android:id="@+id/graph_view_MainActivity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="@dimen/GraphViewMargin"
-        android:outlineAmbientShadowColor="@color/red"
-        android:outlineSpotShadowColor="@color/black_overlay">
-        <!--<View-->
-            <!--android:layout_width="fill_parent"-->
-            <!--android:layout_height="0.2dp"-->
-            <!--android:id="@+id/separator"-->
-            <!--android:visibility="visible"-->
-            <!--android:background="@android:color/darker_gray"/>-->
+        android:layout_margin="@dimen/GraphViewMargin">
     </com.jjoe64.graphview.GraphView>
 
     <ProgressBar

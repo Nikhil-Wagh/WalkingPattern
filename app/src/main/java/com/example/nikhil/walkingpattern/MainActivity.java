@@ -11,6 +11,7 @@ package com.example.nikhil.walkingpattern;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity
 	
 	//    private AVLoadingIndicatorView avi;
     private ProgressBar progressBar;
+    private FloatingActionButton fab;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -212,6 +214,7 @@ private AlertDialog getDialog(int count) {
         graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
         graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
         graphView.setTitle(getGraphTitle());
+		graphView.setTitleTextSize(50);
 //        graphView.getGridLabelRenderer().setHorizontalAxisTitle("Time (millis)");
 //        graphView.getGridLabelRenderer().setVerticalAxisTitle("Sensor Value");
 		//TODO y-labels incorrect for decimal values
@@ -275,12 +278,17 @@ private AlertDialog getDialog(int count) {
 
 
     public void initFAB() {
-        FloatingActionButton fab = findViewById(R.id.fab_MainActivity);
+        fab = findViewById(R.id.fab_MainActivity);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            	//TODO: Show alert, asking user to start walking
 				toggle();
+				/*if (toggle(fab)) {
+					fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_off_white_24dp));
+				}
+				else {
+					fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_on_white_24dp));
+				}*/
 			}
         });
     }
@@ -487,12 +495,10 @@ private AlertDialog getDialog(int count) {
 
     private void toggle() {
         if(isMyServiceRunning(CollectDataService.class)) {
-			stopService(collectDataIntent);
-            Log.d(TAG, "Service Stopped, user interrupt");
-            showSnackBar(getString(R.string.service_stopped_message));
+        	onPostService();
         }
         else {
-        	alertAndStartService();
+        	onPreService();
         }
     }
 	
@@ -505,22 +511,44 @@ private AlertDialog getDialog(int count) {
 		showSnackBar(getString(R.string.service_started_message));
 	}
 	
-	private void alertAndStartService() {
+	private void startAlertSequence() {
     	new AlertDialog.Builder(this)
-				.setTitle("Device Orientation")
-				.setMessage("Please make sure when you put the device in your pocket, it is UPSIDE UP.")
-				.setPositiveButton("OK", null)
+				.setTitle(getString(R.string.orientation_alert_title))
+				.setMessage(getString(R.string.orientation_alert_message))
+				.setPositiveButton(getString(R.string.orientation_alert_positive_button_message), null)
 				.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_phone_android_black_24dp))
+				.setOnDismissListener(new DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(DialogInterface dialog) {
+						Log.d(TAG, "Alert 1 onDismiss called.");
+						showStartWalkingAlertAndStartService();
+					}
+				})
 				.show();
-    
-    	final AlertDialog.Builder startWalkingAlertBuilder = new AlertDialog.Builder(this)
+ 	}
+ 	
+ 	private void onPreService() {
+		startAlertSequence(); // Takes care of alerts, and whether to change fab icon or not
+	}
+	
+	private void onPostService() {
+		stopService(collectDataIntent);
+		Log.d(TAG, "Service Stopped, user interrupt");
+		showSnackBar(getString(R.string.service_stopped_message));
+		fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_on_white_24dp));
+	}
+	
+	private void showStartWalkingAlertAndStartService() {
+		final AlertDialog.Builder startWalkingAlertBuilder = new AlertDialog.Builder(this)
 				.setTitle(getString(R.string.start_walking_alert_title))
 				.setCancelable(false)
 				.setNegativeButton(getString(R.string.start_walking_alert_negative_button_message), null)
+				.setIcon(ContextCompat.getDrawable(this, R.drawable.ic_baseline_directions_run_24px))
 				.setMessage(""); // Had to set something, else dynamic changes won't display
-    	final AlertDialog alertDialog = startWalkingAlertBuilder.create();
+		final AlertDialog alertDialog = startWalkingAlertBuilder.create();
 		alertDialog.show();
-		new CountDownTimer(1000 * 15, 1000) {
+		int countDownTime = 3; // TODO: make 16 before publishing
+		new CountDownTimer(1000 * countDownTime, 1000) {
 			@Override
 			public void onTick(long millisUntilFinished) {
 				if (!alertDialog.isShowing())
@@ -534,10 +562,11 @@ private AlertDialog getDialog(int count) {
 				if (alertDialog.isShowing()) {
 					alertDialog.dismiss();
 					startMyService();
+					fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_off_white_24dp));
 				}
 			}
 		}.start();
- 	}
+	}
 	
 	private String getGraphTitle() {
 		if (getCurrentSensor().equals("Accelerometer")) {

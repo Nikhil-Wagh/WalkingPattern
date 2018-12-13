@@ -25,6 +25,9 @@
     <string name="atleast_one_axis_should_be_set">Atleast one of the axis has to be set</string>
     <string name="service_stopped_message">Service Stopped.</string>
     <string name="service_started_message">Sending your data to cloud.</string>
+    <string name="orientation_alert_title">Device Orientation</string>
+    <string name="orientation_alert_message">We are about to start monitoring your walking pattern. Please make sure when you put the device in your pocket, it is UPSIDE UP.</string>
+    <string name="orientation_alert_positive_button_message">OK</string>
     <string name="start_walking_alert_title">NOTE</string>
     <string name="start_walking_alert_negative_button_message">I don\'t want to walk right now.</string>
     <string name="start_walking_alert_message">You better put that thing in your pocket and start walking, because I\'m only going to wait for %1$d seconds.</string>
@@ -34,4 +37,11 @@
     <string name="gyro_x">Gyroscope: X - Axis</string>
     <string name="gyro_y">Gyroscope: Y - Axis</string>
     <string name="gyro_z">Gyroscope: Z - Axis</string>
+    <string name="no_activity_message">No activity detected in the past 10 mins. Press start to continue</string>
+    <string name="show_x_axis">Show x-axis</string>
+    <string name="show_y_axis">Show y-axis</string>
+    <string name="show_z_axis">Show z-axis</string>
+    <string name="download_data">Download data</string>
+    <string name="logout">logout</string>
+    <string name="external">External</string>
 </resources>

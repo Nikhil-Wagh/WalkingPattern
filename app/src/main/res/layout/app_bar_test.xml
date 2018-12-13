@@ -30,6 +30,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         app:backgroundTint="@color/design_default_color_primary_dark"
-        app:srcCompat="@drawable/ic_cloud_upload_white_24dp" />
+        app:srcCompat="@drawable/ic_cloud_on_white_24dp" />
 
 </android.support.design.widget.CoordinatorLayout>

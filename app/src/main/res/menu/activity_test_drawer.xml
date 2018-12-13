@@ -11,32 +11,32 @@
         <item
             android:id="@+id/radio_buttonX-axis"
             android:icon="@drawable/ic_x_axis_black_24dp"
-            android:title="Show x-axis"
+            android:title="@string/show_x_axis"
             app:actionViewClass="android.widget.RadioButton"
             android:checked="true"/>
         <item
             android:id="@+id/radio_buttonY-axis"
             android:icon="@drawable/ic_y_axis"
-            android:title="Show y-axis"
+            android:title="@string/show_y_axis"
             app:actionViewClass="android.widget.RadioButton" />
         <item
             android:id="@+id/radio_buttonZ-axis"
             android:icon="@drawable/ic_z_axis_24dp"
-            android:title="Show z-axis"
+            android:title="@string/show_z_axis"
             app:actionViewClass="android.widget.RadioButton" />
     </group>
 
     <item
-        android:title="External">
+        android:title="@string/external">
         <menu>
             <item
                 android:id="@+id/button_download_data_ActivityDrawer"
-                android:title="Download data"
+                android:title="@string/download_data"
                 android:icon="@drawable/ic_get_app_black_24dp"
                 />
             <item
                 android:id="@+id/button_logout_ActivityDrawer"
-                android:title="logout"
+                android:title="@string/logout"
                 android:icon="@drawable/ic_exit_to_app_black_24dp"
                 />
         </menu>

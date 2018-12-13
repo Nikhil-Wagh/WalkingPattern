@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorPrimary">#660049</color>
+    <color name="colorPrimaryDark">#58003C</color>
     <color name="colorAccent">#D81B60</color>
     <color name="appBackground"> #ffffff</color>
     <color name="black_overlay">#66000000</color>
     <color name="red">#ff0000</color>
+    <color name="colorAlertTextView">#586d8d</color>
 </resources>
