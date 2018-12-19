@@ -5,7 +5,6 @@ package com.example.nikhil.walkingpattern;
  * 2. Create it a pseudo tabbed activity
  * 3. Create a logo which shows the orientation of selected axis
  * 4. Create a Date Picker
- * 5. Eradicate all the static constant Strings
  * */
 
 import android.app.ActivityManager;
@@ -14,16 +13,19 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -59,14 +61,23 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.google.firebase.functions.HttpsCallableResult;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -184,16 +195,31 @@ public class MainActivity extends AppCompatActivity
         mSeries = new LineGraphSeries<>();
         graphView.addSeries(mSeries);
         graphView.getViewport().setXAxisBoundsManual(true);
-        graphView.getViewport().setMinX(0);
-        graphView.getViewport().setMaxX(1000);
+//        graphView.getViewport().setMinX(0);
+//        graphView.getViewport().setMaxX(1000);
         graphView.getViewport().setScalable(true);
 
         String dateformat = getString(R.string.database_date_format);
         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateformat);
-        
-        graphView.setHorizontalScrollBarEnabled(true);
-        graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
-        graphView.getGridLabelRenderer().setPadding(130);
+		
+		
+/*
+		NumberFormat nf = NumberFormat.getInstance();
+		nf.setMaximumFractionDigits(2);
+		nf.setMaximumIntegerDigits(2);
+		graphView.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter(nf, nf)); // This overrides the previous LabelFormatter
+*/
+		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
+		
+		// If I try to set them both together. I get this error.
+//		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat), nf);
+		//setLabelFormatter (LabelFormatter) in GridLabelRenderer cannot be applied to (DateAsXAxisLabelFormatter, java.text.NumberFormat)
+		
+		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
+        graphView.getGridLabelRenderer().setPadding(120);
+        graphView.getGridLabelRenderer().setLabelVerticalWidth(50);
+		
+		graphView.setHorizontalScrollBarEnabled(true);
         graphView.getGridLabelRenderer().setHorizontalLabelsAngle(30);
         graphTitle = findViewById(R.id.text_view_graph_heading);
         graphTitle.setText(getGraphTitle());
@@ -232,21 +258,26 @@ public class MainActivity extends AppCompatActivity
                 if (e != null) {
                     Log.w(TAG, "Listen Failed", e);
                 }
-                assert queryDocumentSnapshots != null;
-                for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                    if (doc.get("userId") != null) {
-                        currX = (long) doc.get(getString(R.string.order_by_parameter));
-                        if (currX > prevX) {
-                            mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
-                            prevX = currX;
-                        }
-                    }
-                }
-                if (mSeries.isEmpty()) {
-                	TextView textView = findViewById(R.id.no_points_textview_MainActivity);
-                	textView.setVisibility(View.VISIBLE);
+                else {
+//                assert queryDocumentSnapshots != null;
+					if (queryDocumentSnapshots != null) {
+						for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+							if (doc.get("userId") != null) {
+								currX = (long) doc.get(getString(R.string.order_by_parameter));
+								if (currX > prevX) {
+									mSeries.appendData(new DataPoint(currX, (double) doc.get(getCurrentAxis())), true, 100);
+									prevX = currX;
+								}
+							}
+						}
+					} else {
+						showSnackBar("Some error occurred. Please try again later.");
+					}
 				}
-				else {
+				if (mSeries.isEmpty()) {
+					TextView textView = findViewById(R.id.no_points_textview_MainActivity);
+					textView.setVisibility(View.VISIBLE);
+				} else {
 					TextView textView = findViewById(R.id.no_points_textview_MainActivity);
 					textView.setVisibility(View.GONE);
 				}
@@ -319,7 +350,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (id == R.id.button_download_data_ActivityDrawer) {
-            downloadFile();
+            callExportData();
         }
         else if (id == R.id.button_logout_ActivityDrawer) {
             logout();
@@ -329,14 +360,23 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
     
-    private void downloadFile() {
+    private void callExportData() {
+		Map<String, String> data = new HashMap<>();
+		data.put("uid", getUserId());
         FirebaseFunctions mFunctions = FirebaseFunctions.getInstance();
         mFunctions.getHttpsCallable("exportData")
-				.call()
+				.call(data)
 				.addOnSuccessListener(new OnSuccessListener<HttpsCallableResult>() {
 					@Override
 					public void onSuccess(HttpsCallableResult httpsCallableResult) {
-						showSnackBar("File Download Successfull");
+						Log.d(TAG, String.valueOf(httpsCallableResult.getData()));
+						Log.i(TAG, String.valueOf(httpsCallableResult.getClass()));
+						showSnackBar("Data exported to Firestore storage. Preparing to download.");
+						try {
+							downloadFile();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				})
 				.addOnFailureListener(new OnFailureListener() {
@@ -347,18 +387,89 @@ public class MainActivity extends AppCompatActivity
 					}
 				});
     }
-    
-    private void logout() {
+	
+	private void downloadFile() throws IOException {
+		FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
+		StorageReference storageReference = firebaseStorage.getReference();
+		StorageReference exportDataRef = storageReference.child(getExportFileReference());
+		
+//		getLocalFile("AccelerometerReadings.json");
+		
+		exportDataRef.getFile(getLocalFile("AccelerometerReadings.json")).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+			@Override
+			public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+				Log.i(TAG, "Total bytes count: " + taskSnapshot.getTotalByteCount());
+				showSnackBar("File Downloaded.");
+			}
+		}).addOnFailureListener(new OnFailureListener() {
+			@Override
+			public void onFailure(@NonNull Exception e) {
+				showSnackBar("File download failed.");
+				Log.e(TAG, "Exception occurred while downloading file.", e);
+			}
+		});
+		
+	}
+	
+	public void getPermissions() {
+		if (ContextCompat.checkSelfPermission(MainActivity.this,
+				android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+				!= PackageManager.PERMISSION_GRANTED) {
+			
+			if (!ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+					android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+				ActivityCompat.requestPermissions(
+						MainActivity.this,
+						new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+						1
+				);
+			}
+		}
+		Log.i("PERMISSIONS", "Storage permissions taken");
+	}
+	
+	private File getLocalFile(String filename) throws IOException {
+		createDownloadFolder();
+		if (!isExternalStorageWritable()) {
+			Log.i(TAG, "Permissions required.");
+			getPermissions();
+		}
+		File file = new File(Environment.getExternalStoragePublicDirectory(
+				getString(R.string.app_name)), filename);
+		if (!file.createNewFile()) {
+			Log.i(TAG, "Directories not created.");
+		}
+		return file;
+	}
+	
+	private void createDownloadFolder() {
+		File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), getString(R.string.app_name));
+		if (!mediaStorageDir.mkdirs()) {
+			showSnackBar("Downloads folder not found.");
+		}
+	}
+	
+	public boolean isExternalStorageWritable() {
+		String state = Environment.getExternalStorageState();
+		return Environment.DIRECTORY_DOWNLOADS.equals(state);
+	}
+	
+	
+	private String getExportFileReference() {
+		return "exportData/" + getUserId() + "/export.json";
+	}
+	
+	private void logout() {
     	FirebaseAuth.getInstance().signOut();
     	startActivity(new Intent(MainActivity.this, LoginActivity.class));
     }
 
-    private void onMenuItemSelectedBehaviour(CompoundButton compundButton, int index) {
-        if (compundButton.isChecked()) {
+    private void onMenuItemSelectedBehaviour(CompoundButton compoundButton, int index) {
+        if (compoundButton.isChecked()) {
             showSnackBar(getString(R.string.atleast_one_axis_should_be_set));
             return;
         }
-        for (CompoundButton compoundButton: radioButtons) compoundButton.setChecked(false);
+        for (CompoundButton cmpdButton: radioButtons) cmpdButton.setChecked(false);
         radioButtons[index].setChecked(true);
     }
 	
