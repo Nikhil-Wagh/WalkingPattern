@@ -64,7 +64,6 @@ import com.google.firebase.functions.HttpsCallableResult;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
@@ -72,7 +71,6 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;

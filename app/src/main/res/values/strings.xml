@@ -44,4 +44,6 @@
     <string name="download_data">Download data</string>
     <string name="logout">logout</string>
     <string name="external">External</string>
+    <string name="no_accelerometer_message">No Accelerometer found on this device.</string>
+    <string name="no_accelerometer_title">This app won\'t run on your device</string>
 </resources>

@@ -63,18 +63,32 @@ public class CollectDataService extends Service implements SensorEventListener {
         registerSensors();
         
         showNotification();
-
-        /*Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        Notification notification = new NotificationCompat.Builder(this)
-                .setContentText("We are now collecting your walking pattern data. Please start walking")
-                .setContentTitle("Walking Pattern")
-                .setContentIntent(pendingIntent)
-                .build();
-	
-		startForeground(1337, notification);*/
+        
+        autoTerminate();
+        
         return super.onStartCommand(intent, flags, startId);
     }
+	
+	private void autoTerminate() {
+    	final long runTime = 2 * 1000;
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(runTime);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				stopSelf();
+			}
+		});
+	}
+	
+	private void unregisterSensors() {
+    	mSensorManager.unregisterListener(this,
+				mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION));
+    	Log.i(TAG, "Sensors unregistered.");
+	}
 	
 	private void showNotification() {
 		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -84,7 +98,7 @@ public class CollectDataService extends Service implements SensorEventListener {
 				.setSmallIcon(R.mipmap.ic_launcher)
 				.setPriority(PRIORITY_MAX)
 				.setCategory(NotificationCompat.CATEGORY_SERVICE)
-				.setContentText("We are now collecting your walking pattern data. Please keep walking")
+				.setContentText("Please keep walking.")
 				.setContentTitle("Setting up your profile")
 				.build();
 		startForeground(ID_SERVICE, notification);
@@ -103,8 +117,12 @@ public class CollectDataService extends Service implements SensorEventListener {
 	}
 	
 	private void registerSensors() {
-        Log.i(TAG, "Sensors registered:" + mSensor.getName());
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    	if (!mSensorManager.registerListener(
+    			this, mSensor, SensorManager.SENSOR_DELAY_NORMAL)){
+    		Log.i(TAG, "Sensors could not be registered.");
+		}
+//		mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+		Log.i(TAG, "Sensors registered:" + mSensor.getName());
     }
 
     @Override
@@ -144,7 +162,7 @@ public class CollectDataService extends Service implements SensorEventListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mSensorManager.unregisterListener(this, mSensor);
+        unregisterSensors();
         stopForeground(true);
         Log.d(TAG, "Service stopped");
     }

@@ -1,9 +1,16 @@
 package com.example.nikhil.walkingpattern;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -58,6 +65,8 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         Log.d(TAG, "OnCreate: Started");
+        
+        checkSensorAvailability();
 
         GoogleSignInOptions googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -75,8 +84,34 @@ public class LoginActivity extends AppCompatActivity {
         });
 		Log.d(TAG, "OnCreate: Completed");
     }
-
-    @Override
+    
+    private void checkSensorAvailability() {
+		SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) == null) {
+			showAlert(
+					getString(R.string.no_accelerometer_title),
+					getString(R.string.no_accelerometer_message),
+					ContextCompat.getDrawable(this, R.drawable.ic_defected_device_24px));
+			
+		}
+    }
+	
+	private void showAlert(String title, String message, Drawable icon) {
+		new AlertDialog.Builder(this)
+				.setTitle(title)
+				.setMessage(message)
+				.setPositiveButton("Close Application", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						android.os.Process.killProcess(android.os.Process.myPid());
+						System.exit(1);
+					}
+				})
+				.setIcon(icon)
+				.show();
+	}
+	
+	@Override
     public void onStart() {
         super.onStart();
     }
