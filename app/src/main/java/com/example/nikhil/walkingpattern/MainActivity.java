@@ -729,13 +729,4 @@ public class MainActivity extends AppCompatActivity
             super.onBackPressed();
         }
     }
-    /*void startAnim(){
-        avi.show();
-        // or avi.smoothToShow();
-    }
-
-    void stopAnim(){
-        avi.hide();
-        // or avi.smoothToHide();
-    }*/
 }

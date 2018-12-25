@@ -69,7 +69,6 @@ const exportFirestoreData = (uid) => {
 
 const uploadToStorage = (uid, exportData) => {
     const json = JSON.stringify(exportData, null, 4);
-    // console.log(`JSON Data: ${json}`);
     const bucket = storage.bucket("walkingpattern-71969.appspot.com")
     const file = bucket.file(`exportData/${uid}/export.json`);
 
