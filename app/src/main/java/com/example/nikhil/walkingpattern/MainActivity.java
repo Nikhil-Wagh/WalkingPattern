@@ -21,6 +21,7 @@ import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -347,6 +348,10 @@ public class MainActivity extends AppCompatActivity
 				.setPositiveButton(R.string.download_anyway, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
+						if (!isExternalStorageWritable()) {
+							Log.i(TAG, "Permissions required.");
+							getPermissions();
+						}
 						Map<String, String> data = new HashMap<>();
 						data.put("uid", getUserId());
 						data.put("username", getUserName());
@@ -357,7 +362,6 @@ public class MainActivity extends AppCompatActivity
 									@Override
 									public void onSuccess(HttpsCallableResult httpsCallableResult) {
 										Log.d(TAG, String.valueOf(httpsCallableResult.getData()));
-										Log.i(TAG, String.valueOf(httpsCallableResult.getClass()));
 										showSnackBar("Data exported to Firestore storage. Preparing to download.");
 										try {
 											downloadFile();
@@ -384,20 +388,12 @@ public class MainActivity extends AppCompatActivity
 		StorageReference storageReference = firebaseStorage.getReference();
 		StorageReference exportDataRef = storageReference.child(getExportFileReference());
 		
-		exportDataRef.getFile(getLocalFile(getUserName() + ".json")).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+		exportDataRef.getFile(getLocalFile(getFileName())).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
 			@Override
 			public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
 				Log.i(TAG, "Total bytes count: " + taskSnapshot.getTotalByteCount());
-				Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), R.string.download_completed, Snackbar.LENGTH_LONG);
-				snackbar.setAction(R.string.view_file, new View.OnClickListener() {
-					@Override
-					public void onClick(View v) {
-						File file = new File(Environment.getExternalStorageDirectory(), getString(R.string.app_name));
-						Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-						intent.setDataAndType(Uri.fromFile(file), "*/*");
-						startActivity(intent);
-					}
-				});
+				Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity),
+						getString(R.string.download_completed, getFileName()), Snackbar.LENGTH_LONG).show();
 			}
 		}).addOnFailureListener(new OnFailureListener() {
 			@Override
@@ -407,6 +403,10 @@ public class MainActivity extends AppCompatActivity
 			}
 		});
 		
+	}
+	
+	private String getFileName() {
+		return getUserName() + ".json";
 	}
 	
 	public void getPermissions() {
@@ -443,7 +443,7 @@ public class MainActivity extends AppCompatActivity
 	private void createDownloadFolder() {
 		File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), getString(R.string.app_name));
 		if (!mediaStorageDir.mkdirs()) {
-			showSnackBar("Downloads folder not found.");
+			Log.i(TAG, "Downloads not created.");
 		}
 	}
 	

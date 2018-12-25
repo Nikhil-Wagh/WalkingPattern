@@ -249,7 +249,7 @@ public class LoginActivity extends AppCompatActivity {
 	
 	private String getAccName() {
     	Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-    	return sensor.getName();
+    	return sensor.getStringType();
 	}
 	
 	private String getDevice() {
