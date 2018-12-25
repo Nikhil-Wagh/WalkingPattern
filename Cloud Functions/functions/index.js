@@ -10,10 +10,11 @@ const storage = admin.storage();
 
 exports.exportData = functions.https.onCall((data) => {
     const uid = data.uid;
+    const username = data.username;
     const exportData = {};
 
     const firestorePromise = exportFirestoreData(uid).then((firestoreData) => {
-        exportData.firestore = firestoreData;
+        exportData[username] = firestoreData;
         return exportData;
     });
 
@@ -44,25 +45,25 @@ const exportFirestoreData = (uid) => {
     };
     const promises = [];
     const exportData = {};
-    const myCollection = path.collection;
+    const appData = path.collection;
     const myDoc = path.doc;
-    const subCollections = path.subCollections[0];
-    const accCollection = subCollections;
-    const accData = {};
-    // console.log(`Sub Collection: ${accCollection}`);
-    const query = firestore.collection(myCollection).doc(myDoc).collection(accCollection);
-    promises.push(query.orderBy("createdAtMillis").get().then(function (querySnapshot){
-        var len  = 0;
-        querySnapshot.forEach((doc) => {
-            accData[`${doc.id}`] = doc.data();
-            len++;
-        });
-        console.log(`Collected ${len} records.`);
-        exportData[`${accCollection}`] = accData;
-        return exportData;
-    }).catch((error) => {
-        console.error('Error encountered while exporting from firestore: ', error);
-    }));
+    const subCollections = path.subCollections;
+
+    subCollections.forEach((collection) => {
+        const data = {};
+        const query = firestore.collection(appData).doc(myDoc).collection(collection);
+        promises.push(query.orderBy("createdAtMillis").limit(3).get().then(function (querySnapshot) {
+            var len = 0;
+            querySnapshot.forEach((doc) => {
+                data[`${doc.id}`] = doc.data();
+                len++;
+            });
+            console.log(`Collected ${len} records.`);
+            exportData[`${collection}`] = data;
+        }).catch((error) => {
+            console.error('Error encountered while exporting from firestore: ', error);
+        }));
+    });
     return Promise.all(promises).then(() => exportData);
 };
 

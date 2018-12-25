@@ -22,7 +22,7 @@
     <string name="order_by_parameter">createdAtMillis</string>
     <string name="where_greater_than_parameter">createdAtMillis</string>
     <string name="database_date_format">mm:ss.SSS</string>
-    <string name="atleast_one_axis_should_be_set">Atleast one of the axis has to be set</string>
+    <string name="atleast_one_axis_should_be_set">At least one of the axis has to be set</string>
     <string name="service_stopped_message">Service Stopped.</string>
     <string name="service_started_message">Sending your data to cloud.</string>
     <string name="orientation_alert_title">Device Orientation</string>

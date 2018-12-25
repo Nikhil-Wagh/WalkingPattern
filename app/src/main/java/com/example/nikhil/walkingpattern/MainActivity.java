@@ -349,6 +349,7 @@ public class MainActivity extends AppCompatActivity
 					public void onClick(DialogInterface dialog, int which) {
 						Map<String, String> data = new HashMap<>();
 						data.put("uid", getUserId());
+						data.put("username", getUserName());
 						FirebaseFunctions mFunctions = FirebaseFunctions.getInstance();
 						mFunctions.getHttpsCallable("exportData")
 								.call(data)
