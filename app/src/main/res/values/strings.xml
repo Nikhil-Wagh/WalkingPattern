@@ -46,4 +46,9 @@
     <string name="external">External</string>
     <string name="no_accelerometer_message">No Accelerometer found on this device.</string>
     <string name="no_accelerometer_title">This app won\'t run on your device</string>
+    <string name="download_completed">File Downloaded</string>
+    <string name="view_file">VIEW</string>
+    <string name="download_alert_message">Download process performs huge read transactions, proceed only if data is required.</string>
+    <string name="download_alert_title">ATTENTION</string>
+    <string name="download_anyway">Download anyway</string>
 </resources>

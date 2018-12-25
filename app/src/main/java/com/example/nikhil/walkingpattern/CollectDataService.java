@@ -3,7 +3,6 @@ package com.example.nikhil.walkingpattern;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -13,10 +12,13 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -32,12 +34,16 @@ public class CollectDataService extends Service implements SensorEventListener {
 	private static final int PRIORITY_MAX = 2;
 	private static final int ID_SERVICE = 1337;
 	private SensorManager mSensorManager;
-    private Sensor mSensor;
+    private Sensor accSensor;
+    private Sensor gyroSensor;
     private FirebaseFirestore db;
 
     private FirebaseUser currentUser;
 
     private final String TAG = "CollectDataService";
+	String ACC_COLLECTION = "AccelerometerReadings";
+	String GYRO_COLLECTION = "GyroscopeReadings";
+	
 
     public CollectDataService() {
     }
@@ -52,7 +58,9 @@ public class CollectDataService extends Service implements SensorEventListener {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        accSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        gyroSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        
         db = FirebaseFirestore.getInstance();
         try {
             FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -60,17 +68,16 @@ public class CollectDataService extends Service implements SensorEventListener {
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
-        registerSensors();
-        
-        showNotification();
-        
-        autoTerminate();
-        
+        if (registerSensors()) {
+			showNotification();
+			autoTerminate();
+		}
+		
         return super.onStartCommand(intent, flags, startId);
     }
 	
 	private void autoTerminate() {
-    	final long runTime = 2 * 1000;
+    	final long runTime = 2 * 60 * 1000; // 2 minutes
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -81,12 +88,14 @@ public class CollectDataService extends Service implements SensorEventListener {
 				}
 				stopSelf();
 			}
-		});
+		}).start();
 	}
 	
 	private void unregisterSensors() {
     	mSensorManager.unregisterListener(this,
 				mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION));
+    	mSensorManager.unregisterListener(this,
+				mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
     	Log.i(TAG, "Sensors unregistered.");
 	}
 	
@@ -116,28 +125,35 @@ public class CollectDataService extends Service implements SensorEventListener {
  		return channelId;
 	}
 	
-	private void registerSensors() {
-    	if (!mSensorManager.registerListener(
-    			this, mSensor, SensorManager.SENSOR_DELAY_NORMAL)){
-    		Log.i(TAG, "Sensors could not be registered.");
+	private boolean registerSensors() {
+    	if (mSensorManager.registerListener(
+    			this, accSensor, SensorManager.SENSOR_STATUS_ACCURACY_HIGH)){
+    		if (mSensorManager.registerListener(
+    				this, gyroSensor, SensorManager.SENSOR_STATUS_ACCURACY_HIGH)) {
+    			Log.i(TAG, "Sensors registered successfully.");
+    			return true;
+			}
 		}
-//		mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
-		Log.i(TAG, "Sensors registered:" + mSensor.getName());
+		Log.e(TAG, "Sensors could not be registered, aborting.");
+    	return false;
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            Log.i(TAG, "Sensor changed, values are: " + Arrays.toString(event.values));
-            toFirebaseFireStore(event.values);
+//            Log.i(TAG, "Sensor changed, values are: " + Arrays.toString(event.values));
+            toFirebaseFireStore(event.values, ACC_COLLECTION);
         }
+        else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+//			Log.i(TAG, "Sensor changed, values are: " + Arrays.toString(event.values));
+			toFirebaseFireStore(event.values, GYRO_COLLECTION);
+		}
     }
 
-    private void toFirebaseFireStore(float[] values) {
+    private void toFirebaseFireStore(float[] values, String path) {
         SensorReadings accelerometerReadings = new SensorReadings(values, currentUser.getUid());
-        String ACCELEROMETERPATH = "AccelerometerReadings";
         db.collection("AppData").document(getUserId())
-                .collection(ACCELEROMETERPATH)
+                .collection(path)
                 .add(accelerometerReadings)
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -164,10 +180,20 @@ public class CollectDataService extends Service implements SensorEventListener {
         super.onDestroy();
         unregisterSensors();
         stopForeground(true);
+        vibrate();
         Log.d(TAG, "Service stopped");
     }
-    
-    private String getUserId() {
+	
+	private void vibrate() {
+		Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+		} else {
+			v.vibrate(500);
+		}
+	}
+	
+	private String getUserId() {
         return FirebaseAuth.getInstance().getUid();
     }
     

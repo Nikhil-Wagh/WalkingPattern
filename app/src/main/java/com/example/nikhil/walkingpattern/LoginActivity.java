@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -53,6 +54,7 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private FirebaseAuth mAuth;
 
+    private SensorManager sensorManager;
     private static final String TAG = "LoginActivity";
 
     @Override
@@ -86,21 +88,24 @@ public class LoginActivity extends AppCompatActivity {
     }
     
     private void checkSensorAvailability() {
-		SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-		if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) == null) {
-			showAlert(
-					getString(R.string.no_accelerometer_title),
-					getString(R.string.no_accelerometer_message),
-					ContextCompat.getDrawable(this, R.drawable.ic_defected_device_24px));
-			
+		sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
+			if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null){
+				return;
+			}
 		}
+		showAlert(
+			getString(R.string.no_accelerometer_title),
+			getString(R.string.no_accelerometer_message),
+			ContextCompat.getDrawable(this, R.drawable.ic_defected_device_24px)
+		);
     }
 	
 	private void showAlert(String title, String message, Drawable icon) {
 		new AlertDialog.Builder(this)
 				.setTitle(title)
 				.setMessage(message)
-				.setPositiveButton("Close Application", new DialogInterface.OnClickListener() {
+				.setPositiveButton("EXIT", new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						android.os.Process.killProcess(android.os.Process.myPid());
@@ -165,21 +170,6 @@ public class LoginActivity extends AppCompatActivity {
 							db.setFirestoreSettings(settings);
                             getNewUserSnapshot(db);
                             updateUI(FirebaseAuth.getInstance().getCurrentUser());
-                            /*db.collection("AppData")
-                                    .add(UserSnapshot)
-                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                        @Override
-                                        public void onSuccess(DocumentReference documentReference) {
-                                            FirebaseUser user = mAuth.getCurrentUser();
-                                            updateUI(user);
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            showSnackBar("User Login Failed");
-                                        }
-                                    });*/
                         }
                         return null;
                     }
@@ -223,15 +213,62 @@ public class LoginActivity extends AppCompatActivity {
                             Log.e(TAG, "GyroscopeReadings collection could not be created", e);
                         }
                     });
+            
+            storeMetadata(db);
 
         } catch (NullPointerException e) {
             Log.e(TAG, e.getMessage());
         }
     }
-
-    private void updateUI(FirebaseUser user) {
+	
+	private void storeMetadata(FirebaseFirestore db) {
+    	Map<String, String> meta = new HashMap<>();
+    	meta.put("Username", getUsername());
+    	meta.put("Device name", getDevice());
+    	meta.put("Accelerometer", getAccName());
+    	meta.put("Gyroscope", getGyroName());
+		
+		DocumentReference document = db.collection("AppData").document(mAuth.getCurrentUser().getUid());
+		document.set(meta).addOnSuccessListener(new OnSuccessListener<Void>() {
+			@Override
+			public void onSuccess(Void aVoid) {
+				Log.i(TAG, "Meta data added successfully");
+			}
+		}).addOnFailureListener(new OnFailureListener() {
+			@Override
+			public void onFailure(@NonNull Exception e) {
+				Log.e(TAG, "Meta storing failed.", e);
+			}
+		});
+	}
+	
+	private String getGyroName() {
+		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+		return sensor.getName();
+	}
+	
+	private String getAccName() {
+    	Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+    	return sensor.getName();
+	}
+	
+	private String getDevice() {
+		return Build.MANUFACTURER
+				+ " " + Build.MODEL + " " + Build.VERSION.RELEASE
+				+ " " + Build.VERSION_CODES.class.getFields()[android.os.Build.VERSION.SDK_INT].getName();
+	}
+	
+	private String getUsername() {
+		FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+		if (user != null) {
+			return FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
+		}
+		return "Google User";
+	}
+	
+	private void updateUI(FirebaseUser user) {
         if (user != null) {
-            Toast.makeText(this, "User Login Successfull", Toast.LENGTH_LONG).show();
+//            Toast.makeText(this, "User Login Successful", Toast.LENGTH_LONG).show();
             startActivity(new Intent(this, MainActivity.class));
         }
     }

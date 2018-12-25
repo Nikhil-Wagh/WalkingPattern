@@ -1,12 +1,5 @@
 package com.example.nikhil.walkingpattern;
 
-/* TODO:
- * 1. Send Nav Drawer to back and toolbar to front (Although not recommended by google)
- * 2. Create it a pseudo tabbed activity
- * 3. Create a logo which shows the orientation of selected axis
- * 4. Create a Date Picker
- * */
-
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -15,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -115,7 +109,6 @@ public class MainActivity extends AppCompatActivity
 		doForTargets();
     }
 	
-	
 	private void doForTargets() {
     	if (firstRun()) {
     		showTargets();
@@ -210,7 +203,7 @@ public class MainActivity extends AppCompatActivity
 		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
 		
 		// If I try to set them both together. I get this error.
-//		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat), nf);
+		//graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat), nf);
 		//setLabelFormatter (LabelFormatter) in GridLabelRenderer cannot be applied to (DateAsXAxisLabelFormatter, java.text.NumberFormat)
 		
 		graphView.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(MainActivity.this, simpleDateFormat));
@@ -223,7 +216,6 @@ public class MainActivity extends AppCompatActivity
         graphTitle.setText(getGraphTitle());
     }
 	
-	
 	private void initUI() {
         /* Initialize Floating Action Bar,
         Navigation Header (nav_header_test.xml)
@@ -232,7 +224,6 @@ public class MainActivity extends AppCompatActivity
         initNavView();
         initNavHeader();
     }
-
 
     private void initNavView() {
         Toolbar toolbar = findViewById(R.id.toolbar_MainActivity);
@@ -257,7 +248,6 @@ public class MainActivity extends AppCompatActivity
                     Log.w(TAG, "Listen Failed", e);
                 }
                 else {
-//                assert queryDocumentSnapshots != null;
 					if (queryDocumentSnapshots != null) {
 						for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
 							if (doc.get("userId") != null) {
@@ -283,19 +273,12 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-
     public void initFAB() {
         fab = findViewById(R.id.fab_MainActivity);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 				toggle();
-				/*if (toggle(fab)) {
-					fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_off_white_24dp));
-				}
-				else {
-					fab.setImageDrawable(getDrawable(R.drawable.ic_cloud_on_white_24dp));
-				}*/
 			}
         });
     }
@@ -323,13 +306,11 @@ public class MainActivity extends AppCompatActivity
         initRadioButtons(navigationView);
     }
 
-
     public void onPostRadioButtonChanged(int radioButtonIndex, final boolean shouldResetGraph) {
         setCurrentAxis(radioButtonIndex);
         preGraphReset();
         resetGraph(shouldResetGraph);
     }
-
     
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -359,31 +340,42 @@ public class MainActivity extends AppCompatActivity
     }
     
     private void callExportData() {
-		Map<String, String> data = new HashMap<>();
-		data.put("uid", getUserId());
-        FirebaseFunctions mFunctions = FirebaseFunctions.getInstance();
-        mFunctions.getHttpsCallable("exportData")
-				.call(data)
-				.addOnSuccessListener(new OnSuccessListener<HttpsCallableResult>() {
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.download_alert_title)
+				.setMessage(R.string.download_alert_message)
+				.setIcon(getDrawable(R.drawable.ic_warning_black_24dp))
+				.setPositiveButton(R.string.download_anyway, new DialogInterface.OnClickListener() {
 					@Override
-					public void onSuccess(HttpsCallableResult httpsCallableResult) {
-						Log.d(TAG, String.valueOf(httpsCallableResult.getData()));
-						Log.i(TAG, String.valueOf(httpsCallableResult.getClass()));
-						showSnackBar("Data exported to Firestore storage. Preparing to download.");
-						try {
-							downloadFile();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+					public void onClick(DialogInterface dialog, int which) {
+						Map<String, String> data = new HashMap<>();
+						data.put("uid", getUserId());
+						FirebaseFunctions mFunctions = FirebaseFunctions.getInstance();
+						mFunctions.getHttpsCallable("exportData")
+								.call(data)
+								.addOnSuccessListener(new OnSuccessListener<HttpsCallableResult>() {
+									@Override
+									public void onSuccess(HttpsCallableResult httpsCallableResult) {
+										Log.d(TAG, String.valueOf(httpsCallableResult.getData()));
+										Log.i(TAG, String.valueOf(httpsCallableResult.getClass()));
+										showSnackBar("Data exported to Firestore storage. Preparing to download.");
+										try {
+											downloadFile();
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+									}
+								})
+								.addOnFailureListener(new OnFailureListener() {
+									@Override
+									public void onFailure(@NonNull Exception e) {
+										showSnackBar("File download failed");
+										Log.e(TAG, e.getMessage());
+									}
+								});
 					}
 				})
-				.addOnFailureListener(new OnFailureListener() {
-					@Override
-					public void onFailure(@NonNull Exception e) {
-						showSnackBar("File download failed");
-						Log.e(TAG, e.getMessage());
-					}
-				});
+				.setNegativeButton("Cancel", null)
+				.show();
     }
 	
 	private void downloadFile() throws IOException {
@@ -391,13 +383,20 @@ public class MainActivity extends AppCompatActivity
 		StorageReference storageReference = firebaseStorage.getReference();
 		StorageReference exportDataRef = storageReference.child(getExportFileReference());
 		
-//		getLocalFile("AccelerometerReadings.json");
-		
-		exportDataRef.getFile(getLocalFile("AccelerometerReadings.json")).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+		exportDataRef.getFile(getLocalFile(getUserName() + ".json")).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
 			@Override
 			public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
 				Log.i(TAG, "Total bytes count: " + taskSnapshot.getTotalByteCount());
-				showSnackBar("File Downloaded.");
+				Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), R.string.download_completed, Snackbar.LENGTH_LONG);
+				snackbar.setAction(R.string.view_file, new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						File file = new File(Environment.getExternalStorageDirectory(), getString(R.string.app_name));
+						Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+						intent.setDataAndType(Uri.fromFile(file), "*/*");
+						startActivity(intent);
+					}
+				});
 			}
 		}).addOnFailureListener(new OnFailureListener() {
 			@Override
@@ -698,6 +697,13 @@ public class MainActivity extends AppCompatActivity
         return FirebaseAuth.getInstance().getUid();
     }
     
+    private String getUserName() {
+		FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+		if (user != null) {
+			return FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
+		}
+		return "Google User";
+	}
     
     public void showSnackBar(String message) {
     	Snackbar.make(findViewById(R.id.coordinatorLayout_MainActivity), message, Snackbar.LENGTH_LONG).show();
