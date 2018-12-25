@@ -52,7 +52,7 @@ const exportFirestoreData = (uid) => {
     subCollections.forEach((collection) => {
         const data = {};
         const query = firestore.collection(appData).doc(myDoc).collection(collection);
-        promises.push(query.orderBy("createdAtMillis").limit(3).get().then(function (querySnapshot) {
+        promises.push(query.orderBy("createdAtMillis").get().then(function (querySnapshot) {
             var len = 0;
             querySnapshot.forEach((doc) => {
                 data[`${doc.id}`] = doc.data();

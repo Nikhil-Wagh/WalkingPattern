@@ -16,11 +16,26 @@
                             <entry key="actionbar">
                               <value>
                                 <PersistentState>
+                                  <option name="children">
+                                    <map>
+                                      <entry key="image">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="trimmed" value="true" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
+                                    </map>
+                                  </option>
                                   <option name="values">
                                     <map>
                                       <entry key="assetType" value="IMAGE" />
-                                      <entry key="imageAsset" value="$USER_HOME$/Downloads/2x/ic_x_axis.png" />
-                                      <entry key="outputName" value="ic_x_axis_black_24dp" />
+                                      <entry key="imageAsset" value="$USER_HOME$/Downloads/23.png" />
+                                      <entry key="outputName" value="navbar_header" />
                                       <entry key="theme" value="CUSTOM" />
                                       <entry key="themeColor" value="000000" />
                                     </map>
@@ -31,8 +46,24 @@
                             <entry key="launcher">
                               <value>
                                 <PersistentState>
+                                  <option name="children">
+                                    <map>
+                                      <entry key="foregroundImage">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="scalingPercent" value="94" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
+                                    </map>
+                                  </option>
                                   <option name="values">
                                     <map>
+                                      <entry key="foregroundImage" value="$USER_HOME$/Downloads/icons8-google-scholar-filled.svg" />
                                       <entry key="previewDensity" value="XXXHIGH" />
                                       <entry key="showGrid" value="true" />
                                     </map>
@@ -80,9 +111,13 @@
                         </option>
                         <option name="values">
                           <map>
-                            <entry key="outputName" value="ic_warning_black_24dp" />
+                            <entry key="assetSourceType" value="FILE" />
+                            <entry key="autoMirrored" value="true" />
+                            <entry key="height" value="640" />
+                            <entry key="outputName" value="ic_app_launcher" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="$USER_HOME$/Downloads/baseline-perm_device_information-24px.svg" />
+                            <entry key="sourceFile" value="$USER_HOME$/Downloads/icons8-google-scholar-filled.svg" />
+                            <entry key="width" value="640" />
                           </map>
                         </option>
                       </PersistentState>

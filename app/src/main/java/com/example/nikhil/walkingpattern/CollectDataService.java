@@ -3,6 +3,7 @@ package com.example.nikhil.walkingpattern;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -18,7 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -27,8 +27,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.util.Arrays;
 
 public class CollectDataService extends Service implements SensorEventListener {
 	private static final int PRIORITY_MAX = 2;
@@ -77,7 +75,7 @@ public class CollectDataService extends Service implements SensorEventListener {
     }
 	
 	private void autoTerminate() {
-    	final long runTime = 2 * 60 * 1000; // 2 minutes
+    	final long runTime = 2 * 60 * 1000;
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -104,12 +102,17 @@ public class CollectDataService extends Service implements SensorEventListener {
 		String channelId = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? createNotificationChannel(notificationManager) : "";
 		NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId);
 		Notification notification = notificationBuilder.setOngoing(true)
-				.setSmallIcon(R.mipmap.ic_launcher)
+				.setSmallIcon(R.drawable.ic_app_notification)
 				.setPriority(PRIORITY_MAX)
 				.setCategory(NotificationCompat.CATEGORY_SERVICE)
 				.setContentText("Please keep walking.")
 				.setContentTitle("Setting up your profile")
 				.build();
+		
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+				new Intent(this, MainActivity.class),
+				PendingIntent.FLAG_UPDATE_CURRENT);
+		notificationBuilder.setContentIntent(pendingIntent);
 		startForeground(ID_SERVICE, notification);
 	}
 	

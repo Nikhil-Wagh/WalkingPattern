@@ -635,7 +635,7 @@ public class MainActivity extends AppCompatActivity
 				.setMessage(""); // Had to set something, else dynamic changes won't display
 		final AlertDialog alertDialog = startWalkingAlertBuilder.create();
 		alertDialog.show();
-		int countDownTime = 16; // TODO: make 16 before publishing
+		int countDownTime = 16;
 		new CountDownTimer(1000 * countDownTime, 1000) {
 			@Override
 			public void onTick(long millisUntilFinished) {
