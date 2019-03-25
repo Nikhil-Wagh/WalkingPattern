@@ -75,7 +75,7 @@ public class CollectDataService extends Service implements SensorEventListener {
     }
 	
 	private void autoTerminate() {
-    	final long runTime = 2 * 60 * 1000;
+    	final long runTime = 60 * 1000;//2 * 60 * 1000;
 		new Thread(new Runnable() {
 			@Override
 			public void run() {

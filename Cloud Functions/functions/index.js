@@ -52,7 +52,7 @@ const exportFirestoreData = (uid) => {
     subCollections.forEach((collection) => {
         const data = {};
         const query = firestore.collection(appData).doc(myDoc).collection(collection);
-        promises.push(query.orderBy("createdAtMillis").get().then(function (querySnapshot) {
+        promises.push(query.orderBy("createdAtMillis").limit(10).get().then(function (querySnapshot) {
             var len = 0;
             querySnapshot.forEach((doc) => {
                 data[`${doc.id}`] = doc.data();
@@ -60,6 +60,7 @@ const exportFirestoreData = (uid) => {
             });
             console.log(`Collected ${len} records.`);
             exportData[`${collection}`] = data;
+            return Promise()
         }).catch((error) => {
             console.error('Error encountered while exporting from firestore: ', error);
         }));
